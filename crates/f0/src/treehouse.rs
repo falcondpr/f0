@@ -48,8 +48,13 @@ pub fn status(repo: &Path) -> Result<Vec<Slot>, F0Error> {
 
 /// Returns the slot to the pool. Runs attached to the terminal because treehouse
 /// asks for confirmation before discarding uncommitted changes.
-pub fn return_slot(path: &Path) -> Result<(), F0Error> {
-    process::interactive("treehouse", ["return".as_ref(), path.as_os_str()], None)
+/// With `force` it discards them without asking.
+pub fn return_slot(path: &Path, force: bool) -> Result<(), F0Error> {
+    let mut args = vec!["return".as_ref(), path.as_os_str()];
+    if force {
+        args.push("--force".as_ref());
+    }
+    process::interactive("treehouse", args, None)
 }
 
 fn parse_status(json: &str) -> Result<Vec<Slot>, F0Error> {

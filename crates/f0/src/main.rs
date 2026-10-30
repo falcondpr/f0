@@ -46,6 +46,10 @@ enum Cmd {
         /// Branch to cut from, overriding `base` in the project config.
         #[arg(long)]
         base: Option<String>,
+        /// Branch type, one of the project's `branch_prefixes` without the `/` (e.g. `fix`);
+        /// defaults to the first one.
+        #[arg(short = 't', long = "type", value_name = "TYPE")]
+        kind: Option<String>,
         /// Servers to start right away, comma separated; the others wait for Enter.
         #[arg(long, value_delimiter = ',', value_name = "SERVERS")]
         start: Vec<String>,
@@ -81,10 +85,14 @@ enum Cmd {
     },
     /// Pick an f0 session and switch to it.
     Switch,
-    /// Close a slot's session and return the slot to the pool.
+    /// Close a slot's session and return the slot to the pool. Inside that session it asks
+    /// in the status line and closes it in the background.
     Done {
         /// Slot id (`hubi/4`), task, session or path, as `f0 ls` shows them; defaults to the current directory.
         slot: Option<String>,
+        /// Discard uncommitted changes without asking.
+        #[arg(long)]
+        force: bool,
     },
     /// Check tools, global defaults and project configs.
     Doctor,
@@ -98,10 +106,19 @@ fn main() -> anyhow::Result<()> {
             ticket,
             project,
             base,
+            kind,
             start,
             agent,
             no_attach,
-        } => commands::new(&ticket, project.as_deref(), base, &start, agent, !no_attach),
+        } => commands::new(
+            &ticket,
+            project.as_deref(),
+            base,
+            kind.as_deref(),
+            &start,
+            agent,
+            !no_attach,
+        ),
         Cmd::Open {
             slot,
             start,
@@ -110,7 +127,7 @@ fn main() -> anyhow::Result<()> {
         } => commands::open(slot.as_deref(), &start, agent, !no_attach),
         Cmd::Ls { all, paths } => commands::ls(all, paths),
         Cmd::Switch => commands::switch(),
-        Cmd::Done { slot } => commands::done(slot.as_deref()),
+        Cmd::Done { slot, force } => commands::done(slot.as_deref(), force),
         Cmd::Doctor => commands::doctor(),
     }
 }

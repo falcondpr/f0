@@ -88,7 +88,7 @@ pub fn run(name: Option<&str>, template: bool) -> anyhow::Result<()> {
             repo: repo_text,
             base: answers.base.clone(),
             detected_base: detected_base.clone(),
-            branch_prefix: answers.branch_prefix.clone(),
+            branch_prefixes: answers.branch_prefixes.clone(),
             include_file,
             servers: answers.servers.clone(),
             terminals: terminals_for(answers.servers.len(), defaults.layout.terminals),
@@ -160,7 +160,7 @@ struct Context<'a> {
 struct Answers {
     name: String,
     base: Option<String>,
-    branch_prefix: String,
+    branch_prefixes: Vec<String>,
     agent: String,
     env_patterns: Vec<String>,
     servers: Vec<Server>,
@@ -181,7 +181,8 @@ fn ask<R: BufRead, W: Write>(
 
     let base = prompt(input, out, "Base branch", context.detected_base)?;
     let base = (!base.is_empty()).then_some(base);
-    let branch_prefix = prompt(input, out, "Branch prefix", Some("feature/"))?;
+    let branch_prefixes =
+        prompt::ask_branch_prefixes(input, out, &config::default_branch_prefixes())?;
     let agent = prompt::ask_agent(input, out, context.default_agent)?;
 
     let mut env_patterns = Vec::new();
@@ -227,7 +228,7 @@ fn ask<R: BufRead, W: Write>(
     Ok(Answers {
         name,
         base,
-        branch_prefix,
+        branch_prefixes,
         agent,
         env_patterns,
         servers,
@@ -286,7 +287,10 @@ mod tests {
         let answers = answers.unwrap();
         assert_eq!(answers.name, "bottom-sheet");
         assert_eq!(answers.base.as_deref(), Some("main"));
-        assert_eq!(answers.branch_prefix, "feature/");
+        assert_eq!(
+            answers.branch_prefixes,
+            ["feature/", "fix/", "refactor/", "chore/"]
+        );
         assert_eq!(answers.agent, "claude");
         assert_eq!(answers.env_patterns, env);
         assert!(answers.servers.is_empty());
@@ -299,7 +303,9 @@ mod tests {
             "my app",         // invalid project name
             "sheet",          // project name
             "develop",        // base
-            "fix/",           // prefix
+            ",",              // no prefixes
+            "fix/, fix",      // repeated
+            "fix/, chore/",   // prefixes
             "codex",          // agent
             "n",              // skip the found env files
             "a/.env, b/.env", // other files
@@ -325,7 +331,9 @@ mod tests {
         let answers = result.unwrap();
         assert_eq!(answers.name, "sheet");
         assert_eq!(answers.base.as_deref(), Some("develop"));
-        assert_eq!(answers.branch_prefix, "fix/");
+        assert_eq!(answers.branch_prefixes, ["fix/", "chore/"]);
+        assert!(out.contains("needs at least one prefix"), "{out}");
+        assert!(out.contains("repeats `fix`"), "{out}");
         assert_eq!(answers.agent, "codex");
         assert_eq!(answers.env_patterns, ["a/.env", "b/.env"]);
         assert_eq!(

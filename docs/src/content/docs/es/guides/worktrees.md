@@ -39,6 +39,6 @@ include_file = "~/.config/f0/my-app.worktreeinclude"
 
 f0 lo pasa como `treehouse get --include-file`.
 
-## Por qué `done` no se ejecuta dentro de su propia sesión
+## Ejecutar `done` dentro de su propia sesión
 
-Devolver un slot detiene todos sus procesos, incluida la shell que estaría ejecutando `f0 done`. Ejecútalo desde otra terminal u otra sesión.
+Devolver un slot detiene todos sus procesos, incluida la shell que estaría ejecutando `f0 done`. Por eso, dentro de la sesión de la tarea, `f0 done` (o `Ctrl-a X`) pregunta en la barra de estado de tmux y deja el trabajo a un job de tmux en segundo plano, que no pertenece a ningún panel. Ese job no puede responder la pregunta de treehouse sobre cambios sin commitear, así que f0 pregunta antes y te dice cuántos se descartarían.

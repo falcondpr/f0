@@ -24,12 +24,12 @@ f0 init [--name <nombre>] [--template]
 | `--name` | Respuesta por defecto para el nombre del proyecto. Si no, el nombre de la carpeta del repositorio |
 | `--template` | Escribe un archivo con marcadores `<...>` en lugar de preguntar |
 
-Pregunta el nombre del proyecto, la rama base (por defecto, a la que apunta `origin/HEAD`, o la rama actual en un repo sin remoto), el prefijo de rama, el [agente de IA](/es/reference/configuration/#agente-de-ia), los archivos env y los servidores de desarrollo. Con Enter aceptas el valor entre corchetes.
+Pregunta el nombre del proyecto, la rama base (por defecto, a la que apunta `origin/HEAD`, o la rama actual en un repo sin remoto), los prefijos de rama, el [agente de IA](/es/reference/configuration/#agente-de-ia), los archivos env y los servidores de desarrollo. Con Enter aceptas el valor entre corchetes.
 
 ```
 Project name [react-native-bottom-sheet]: bottom-sheet
 Base branch [main]:
-Branch prefix [feature/]:
+Branch prefixes, comma separated, the first is the default [feature/, fix/, refactor/, chore/]:
 AI agent command (claude, codex, gemini, opencode...) [claude]:
 Other files to copy, comma separated (empty for none):
 Add a dev server? [y/N]: y
@@ -60,7 +60,7 @@ Hace las mismas preguntas que `f0 init`, con los valores actuales por defecto, a
 
 ```
 Base branch [develop]:
-Branch prefix [feature/]:
+Branch prefixes, comma separated, the first is the default [feature/, fix/, refactor/, chore/]:
 AI agent command (claude, codex, gemini, opencode...) [claude]:
 Env files: using the repo's .worktreeinclude
 Server api: pnpm nx serve @org/api
@@ -81,14 +81,15 @@ Si nada cambió lo dice y no toca el archivo. Si no, muestra un `git diff` del a
 Reserva un slot de treehouse con una rama nueva y abre su espacio de trabajo.
 
 ```bash
-f0 new <ticket> [--project <nombre>] [--base <rama>] [--start <servidores>] [--agent <comando>] [--no-attach]
+f0 new <ticket> [--project <nombre>] [--base <rama>] [--type <tipo>] [--start <servidores>] [--agent <comando>] [--no-attach]
 ```
 
 | Argumento | Significado |
 |---|---|
-| `<ticket>` | Id de la tarea, se agrega al `branch_prefix` del proyecto (`APP-123` pasa a ser `feature/APP-123`) |
+| `<ticket>` | Id de la tarea, se agrega al primero de los `branch_prefixes` del proyecto (`APP-123` pasa a ser `feature/APP-123`) |
 | `-p`, `--project` | Nombre del proyecto. Por defecto, el proyecto cuyo `repo` contiene la carpeta actual |
 | `--base` | Rama de la que se corta, en lugar de la `base` del proyecto |
+| `-t`, `--type` | Tipo de rama: uno de los `branch_prefixes` del proyecto, con o sin la `/` (`--type fix` crea `fix/APP-123`). La sesión sigue siendo `my-app/APP-123` |
 | `--start` | Servidores que arrancan enseguida, separados por coma (`--start api,web`). Los demás esperan tu Enter, salvo que tengan `autostart = true` |
 | `--agent` | Agente de IA solo para esta tarea, como `codex` u `opencode`, en lugar del del proyecto |
 | `--no-attach` | Crea la sesión sin conectarse e imprime su nombre |
@@ -136,7 +137,7 @@ Free slots: my-app 2 (`f0 ls --all` lists them)
 | `--all` | También lista los slots libres |
 | `--paths` | Agrega una columna con la carpeta de cada slot |
 
-treehouse numera los slots por repositorio, así que el mismo número aparece en varios proyectos. La columna **ID**, `<proyecto>/<slot>`, es única, y `f0 open` y `f0 done` la aceptan. **TASK** es la rama sin el `branch_prefix` del proyecto.
+treehouse numera los slots por repositorio, así que el mismo número aparece en varios proyectos. La columna **ID**, `<proyecto>/<slot>`, es única, y `f0 open` y `f0 done` la aceptan. **TASK** es la rama sin el prefijo de `branch_prefixes` con el que empiece.
 
 ## f0 switch
 
@@ -147,7 +148,7 @@ Muestra una lista numerada de sesiones de f0 y cambia a la que elijas. Dentro de
 Cierra la sesión de un slot y devuelve el slot al pool.
 
 ```bash
-f0 done [slot]
+f0 done [slot] [--force]
 ```
 
 Nombra el slot de cualquiera de las formas que muestra `f0 ls`:
@@ -159,7 +160,9 @@ f0 done my-app/APP-123                       # la columna SESSION
 f0 done ~/.treehouse/my-app-3f9a2c/4/my-app  # la ruta, de `f0 ls --paths`
 ```
 
-Sin `[slot]` usa la carpeta actual. Primero cierra la sesión y después `treehouse return` limpia el slot, y pregunta antes de descartar cambios sin commitear. Rechaza carpetas que no son un slot y no se ejecuta desde dentro de la sesión que cerraría.
+Sin `[slot]` usa la carpeta actual. Primero cierra la sesión y después `treehouse return` limpia el slot, y pregunta antes de descartar cambios sin commitear; con `--force` los descarta sin preguntar. Rechaza carpetas que no son un slot.
+
+Dentro de la sesión que cerraría, cerrar la sesión detendría al propio `f0 done` a mitad de camino, así que pregunta en la barra de estado de tmux (`Close my-app/APP-123 and return its slot? (y/n)`, con la cantidad de cambios sin commitear que descartaría, si hay) y tmux cierra la sesión y devuelve el slot en segundo plano. `Ctrl-a X` hace lo mismo desde cualquier panel. Si la devolución en segundo plano falla, tmux muestra un mensaje y el slot sigue en `f0 ls`; ejecuta `f0 done <id>` desde una terminal para ver por qué.
 
 ## f0 doctor
 

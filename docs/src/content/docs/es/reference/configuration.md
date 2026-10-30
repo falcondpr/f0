@@ -76,7 +76,7 @@ Si el comando para retomar falla, como cuando todavía no hay conversación, el 
 ```toml
 repo = "~/dev/my-app"
 base = "develop"
-branch_prefix = "feature/"
+branch_prefixes = ["feature/", "fix/", "refactor/", "chore/"]
 # include_file = "~/.config/f0/my-app.worktreeinclude"
 
 [[servers]]
@@ -99,7 +99,7 @@ terminals = 4
 |---|---|---|
 | `repo` | obligatoria | Checkout principal. Se expande `~/`. Se compara con la carpeta actual, también desde dentro de un slot |
 | `base` | la que infiere treehouse | Rama desde la que se cortan las tareas nuevas. Se exporta como `F0_BASE` |
-| `branch_prefix` | `feature/` | Prefijo de las ramas de `f0 new`; se quita del nombre de sesión |
+| `branch_prefixes` | `["feature/", "fix/", "refactor/", "chore/"]` | Prefijos de las ramas de `f0 new`. El primero es el de por defecto, `f0 new --type fix` usa `fix/`. Se quitan del nombre de sesión. Los archivos que todavía tienen un solo `branch_prefix = "feature/"` siguen funcionando, solo con ese prefijo |
 | `include_file` | `<repo>/.worktreeinclude` | Archivo con los archivos ignorados que se copian a cada slot. Tiene que existir; si está vacío no copia nada |
 | `servers` | ninguno | Lista de `name`, `cmd`, `cwd` opcional (relativo al slot) y `autostart` (por defecto `false`: el comando espera tu Enter) |
 | `editor`, `agent`, `layout` | valores globales | Las mismas claves que en `config.toml`, sin el prefijo `defaults.` |

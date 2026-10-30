@@ -49,11 +49,11 @@ Cada tarea tiene su propio worktree, así que cada repositorio necesita dos cosa
    f0 new APP-123
    ```
 
-   f0 crea `feature/APP-123` desde `develop` en un slot nuevo y abre una sesión de tmux llamada `my-app/APP-123` con el editor y el agente en marcha. Cada panel de servidor tiene su comando escrito y esperando: aprieta Enter en los que necesites, o arráncalos con la tarea usando `f0 new APP-123 --start api`.
+   f0 crea `feature/APP-123` desde `develop` en un slot nuevo y abre una sesión de tmux llamada `my-app/APP-123` con el editor y el agente en marcha. Cada panel de servidor tiene su comando escrito y esperando: aprieta Enter en los que necesites, o arráncalos con la tarea usando `f0 new APP-123 --start api`. Para un fix o un chore, `f0 new APP-123 --type fix` crea `fix/APP-123` en su lugar.
 
 4. Trabaja. Desconéctate con `Ctrl-a d` cuando quieras: todo sigue corriendo. Vuelve con `f0 switch` o `f0 open APP-123`.
 
-5. Cuando la tarea esté mergeada, devuelve el slot desde otra terminal:
+5. Cuando la tarea esté mergeada, aprieta `Ctrl-a X` dentro de su sesión, o desde cualquier terminal:
 
    ```bash
    f0 done APP-123  # o el id del slot que muestra `f0 ls`, como my-app/4

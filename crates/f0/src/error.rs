@@ -52,11 +52,8 @@ pub enum F0Error {
     #[error("tmux session `{name}` already exists, use `f0 open` to attach")]
     SessionExists { name: String },
 
-    #[error(
-        "this pane belongs to the session being closed; run `f0 done {path}` from another terminal, \
-         because returning the slot terminates every process inside it"
-    )]
-    InsideTargetSession { path: PathBuf },
+    #[error("no client shows tmux session `{session}` to ask for confirmation")]
+    NoClient { session: String },
 
     #[error(
         "f0 runs every task in its own treehouse worktree; install it with `brew install treehouse`"
@@ -93,6 +90,16 @@ pub enum F0Error {
 
     #[error("project `{project}` has no server `{name}`; its servers are: {available}")]
     UnknownServer {
+        project: String,
+        name: String,
+        available: String,
+    },
+
+    #[error(
+        "project `{project}` has no branch type `{name}`; its types are: {available} \
+         (add more to `branch_prefixes` with `f0 edit`)"
+    )]
+    UnknownBranchType {
         project: String,
         name: String,
         available: String,

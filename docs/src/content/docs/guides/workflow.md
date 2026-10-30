@@ -26,6 +26,15 @@ f0 runs `treehouse get --lease --base <base> --branch feature/APP-123`, opens a 
 
 The branch is always cut from the project's `base`. Use `--base` to override it for one task.
 
+The branch type is the first of the project's `branch_prefixes`, `feature/` by default. Pick another one for a task with `--type`:
+
+```bash
+f0 new APP-124 --type fix       # fix/APP-124
+f0 new APP-125 -t chore         # chore/APP-125
+```
+
+The session is still `my-app/APP-124`. Projects created before `branch_prefixes` existed have only `feature/`; add the others with `f0 edit`.
+
 ## 2. Environment files
 
 treehouse copies the files listed in `.worktreeinclude` from the main checkout into the slot when it is leased. See [Worktrees](/guides/worktrees/).
@@ -62,7 +71,7 @@ gh pr create --base develop --fill
 
 ## 7. Finish
 
-From a terminal that is not inside the task session:
+Press `Ctrl-a X` inside the task session, or type `f0 done` in any of its panes. From another terminal, name the task:
 
 ```bash
 f0 done APP-123   # by task

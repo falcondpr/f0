@@ -11,6 +11,7 @@ pub fn new(
     ticket: &str,
     project_name: Option<&str>,
     base: Option<String>,
+    kind: Option<&str>,
     start: &[String],
     agent: Option<String>,
     attach: bool,
@@ -29,6 +30,7 @@ pub fn new(
     }
     project.ensure_filled()?;
     project.check_start(start)?;
+    let branch = project.branch_for(ticket, kind)?;
     require_agent(&project)?;
 
     let include = project.worktree_include();
@@ -45,7 +47,6 @@ pub fn new(
         return Err(F0Error::SessionExists { name }.into());
     }
 
-    let branch = project.branch_for(ticket);
     eprintln!("Leasing a {} slot for {branch}...", project.name);
     let worktree = treehouse::lease(&project, &branch, &format!("f0:{name}"))?;
     start_session(
@@ -247,7 +248,13 @@ pub fn switch() -> anyhow::Result<()> {
 }
 
 /// Closes the session of a slot and returns the slot to the pool.
-pub fn done(target: Option<&str>) -> anyhow::Result<()> {
+/// The job `f0 done` leaves to tmux when it runs inside the session it closes: `#{1}` is
+/// f0 and `#{2}` the slot. Its output has nowhere to go once the session is gone, so a
+/// failure is shown as a message.
+const DONE_JOB: &str = "#{q:1} done --force #{q:2} >/dev/null 2>&1 || tmux display-message -d 0 \
+     'f0 done could not return the slot; run f0 ls and f0 done <id> in a terminal to see why'";
+
+pub fn done(target: Option<&str>, force: bool) -> anyhow::Result<()> {
     require_treehouse()?;
     let config_dir = config::config_dir()?;
     let defaults = config::load_defaults(&config_dir)?;
@@ -259,19 +266,40 @@ pub fn done(target: Option<&str>) -> anyhow::Result<()> {
 
     let sessions = tmux::sessions_for(&root)?;
     let current = tmux::current_session();
-    if sessions
+    if let Some(session) = sessions
         .iter()
-        .any(|s| current.as_deref() == Some(s.name.as_str()))
+        .find(|s| current.as_deref() == Some(s.name.as_str()))
     {
-        return Err(F0Error::InsideTargetSession { path: root }.into());
+        return done_from_inside(&session.name, &root, force);
     }
 
     for session in &sessions {
         eprintln!("Closing session {}", session.name);
         tmux::kill_session(&session.name)?;
     }
-    treehouse::return_slot(&root)?;
+    treehouse::return_slot(&root, force)?;
     eprintln!("Returned {}", root.display());
+    Ok(())
+}
+
+/// Closing the session would kill this process halfway, so tmux runs the rest in the
+/// background. That job has no terminal for treehouse to ask in, so f0 asks first and
+/// warns about the uncommitted changes the job will discard.
+fn done_from_inside(session: &str, root: &Path, force: bool) -> anyhow::Result<()> {
+    let exe = std::env::current_exe().context("could not locate the f0 binary")?;
+    let (exe, root_text) = (exe.to_string_lossy(), root.to_string_lossy());
+    let args = [exe.as_ref(), root_text.as_ref()];
+    if force {
+        tmux::run_in_background(DONE_JOB, &args)?;
+        return Ok(());
+    }
+    let prompt = match git::changed_files(root)? {
+        0 => format!("Close {session} and return its slot? (y/n)"),
+        changes => {
+            format!("Close {session}? {changes} uncommitted change(s) will be discarded (y/n)")
+        }
+    };
+    tmux::confirm_then_run(session, &prompt, DONE_JOB, &args)?;
     Ok(())
 }
 

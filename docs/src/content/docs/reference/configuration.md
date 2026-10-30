@@ -76,7 +76,7 @@ If the resume command fails, as when there is no conversation yet, the agent sta
 ```toml
 repo = "~/dev/my-app"
 base = "develop"
-branch_prefix = "feature/"
+branch_prefixes = ["feature/", "fix/", "refactor/", "chore/"]
 # include_file = "~/.config/f0/my-app.worktreeinclude"
 
 [[servers]]
@@ -99,7 +99,7 @@ terminals = 4
 |---|---|---|
 | `repo` | required | Main checkout. `~/` is expanded. Matched against the current directory, also from inside a slot |
 | `base` | inferred by treehouse | Branch new tasks are cut from. Exported as `F0_BASE` |
-| `branch_prefix` | `feature/` | Prefix for `f0 new` branches; stripped from session names |
+| `branch_prefixes` | `["feature/", "fix/", "refactor/", "chore/"]` | Prefixes for `f0 new` branches. The first is the default, `f0 new --type fix` picks `fix/`. Stripped from session names. Files that still have a single `branch_prefix = "feature/"` keep working with only that prefix |
 | `include_file` | `<repo>/.worktreeinclude` | File that lists the ignored files copied into every slot. It must exist; an empty file copies nothing |
 | `servers` | none | List of `name`, `cmd`, optional `cwd` (relative to the slot) and `autostart` (default `false`: the command waits for Enter) |
 | `editor`, `agent`, `layout` | global defaults | Same keys as in `config.toml`, without the `defaults.` prefix |
