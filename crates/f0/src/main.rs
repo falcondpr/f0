@@ -46,6 +46,10 @@ enum Cmd {
         /// Branch to cut from, overriding `base` in the project config.
         #[arg(long)]
         base: Option<String>,
+        /// Branch type, one of the project's `branch_prefixes` without the `/` (e.g. `fix`);
+        /// defaults to the first one.
+        #[arg(short = 't', long = "type", value_name = "TYPE")]
+        kind: Option<String>,
         /// Servers to start right away, comma separated; the others wait for Enter.
         #[arg(long, value_delimiter = ',', value_name = "SERVERS")]
         start: Vec<String>,
@@ -98,10 +102,19 @@ fn main() -> anyhow::Result<()> {
             ticket,
             project,
             base,
+            kind,
             start,
             agent,
             no_attach,
-        } => commands::new(&ticket, project.as_deref(), base, &start, agent, !no_attach),
+        } => commands::new(
+            &ticket,
+            project.as_deref(),
+            base,
+            kind.as_deref(),
+            &start,
+            agent,
+            !no_attach,
+        ),
         Cmd::Open {
             slot,
             start,

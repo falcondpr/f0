@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use anyhow::bail;
 
-use crate::config::{Agent, Server};
+use crate::config::{self, Agent, Server};
 use crate::process;
 
 /// Reads one answer; an empty one takes `default`. End of input cancels before anything
@@ -80,6 +80,28 @@ pub fn ask_agent<R: BufRead, W: Write>(
             )?;
         }
         return Ok(cmd);
+    }
+}
+
+/// Branch prefixes, comma separated; the first is what `f0 new` uses without `--type`.
+pub fn ask_branch_prefixes<R: BufRead, W: Write>(
+    input: &mut R,
+    out: &mut W,
+    current: &[String],
+) -> anyhow::Result<Vec<String>> {
+    let current = current.join(", ");
+    loop {
+        let answer = prompt(
+            input,
+            out,
+            "Branch prefixes, comma separated, the first is the default",
+            Some(&current),
+        )?;
+        let prefixes = split_list(&answer);
+        match config::check_branch_prefixes(&prefixes) {
+            Ok(()) => return Ok(prefixes),
+            Err(reason) => writeln!(out, "  {reason}")?,
+        }
     }
 }
 

@@ -98,6 +98,16 @@ pub enum F0Error {
         available: String,
     },
 
+    #[error(
+        "project `{project}` has no branch type `{name}`; its types are: {available} \
+         (add more to `branch_prefixes` with `f0 edit`)"
+    )]
+    UnknownBranchType {
+        project: String,
+        name: String,
+        available: String,
+    },
+
     #[error("f0 edit asks questions, so it needs a terminal; edit {path} directly instead")]
     NeedsTerminal { path: PathBuf },
 

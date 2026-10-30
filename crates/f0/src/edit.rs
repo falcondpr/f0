@@ -58,7 +58,7 @@ pub fn run(name: Option<&str>) -> anyhow::Result<()> {
     // Compare values, not text: a hand-written file renders differently even when every
     // answer kept its current value.
     let file_changed = answers.base != file.base
-        || answers.branch_prefix != file.branch_prefix
+        || answers.branch_prefixes != file.branch_prefixes
         || answers.servers != file.servers
         || agent != file.agent;
     let include_changed = answers.include != include;
@@ -75,7 +75,7 @@ pub fn run(name: Option<&str>) -> anyhow::Result<()> {
         repo: file.repo.clone(),
         base: answers.base,
         detected_base,
-        branch_prefix: answers.branch_prefix,
+        branch_prefixes: answers.branch_prefixes,
         include_file: file.include_file.clone(),
         terminals: terminals_for(answers.servers.len(), current_terminals),
         servers: answers.servers,
@@ -174,7 +174,7 @@ fn show_diff(old: &Path, new: &Path) -> anyhow::Result<()> {
 #[derive(Debug, PartialEq)]
 struct Answers {
     base: Option<String>,
-    branch_prefix: String,
+    branch_prefixes: Vec<String>,
     agent: String,
     /// `None` when the repo's own `.worktreeinclude` is used.
     include: Option<Vec<String>>,
@@ -197,7 +197,7 @@ fn ask<R: BufRead, W: Write>(
         .or(detected_base);
     let base = prompt(input, out, "Base branch", current_base)?;
     let base = (!base.is_empty()).then_some(base);
-    let branch_prefix = prompt(input, out, "Branch prefix", Some(&file.branch_prefix))?;
+    let branch_prefixes = prompt::ask_branch_prefixes(input, out, &file.branch_prefixes)?;
     let current_agent = file
         .agent
         .as_ref()
@@ -280,7 +280,7 @@ fn ask<R: BufRead, W: Write>(
 
     Ok(Answers {
         base,
-        branch_prefix,
+        branch_prefixes,
         agent,
         include,
         servers,
@@ -356,7 +356,10 @@ mod tests {
         let (answers, out) = run_ask("\n\n\n\n\n\n\n", &file, None);
         let answers = answers.unwrap();
         assert_eq!(answers.base.as_deref(), Some("develop"));
-        assert_eq!(answers.branch_prefix, "feature/");
+        assert_eq!(
+            answers.branch_prefixes,
+            ["feature/", "fix/", "refactor/", "chore/"]
+        );
         assert_eq!(answers.agent, "claude");
         assert_eq!(answers.include, None);
         assert_eq!(answers.servers, file.servers);

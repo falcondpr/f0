@@ -11,6 +11,7 @@ pub fn new(
     ticket: &str,
     project_name: Option<&str>,
     base: Option<String>,
+    kind: Option<&str>,
     start: &[String],
     agent: Option<String>,
     attach: bool,
@@ -29,6 +30,7 @@ pub fn new(
     }
     project.ensure_filled()?;
     project.check_start(start)?;
+    let branch = project.branch_for(ticket, kind)?;
     require_agent(&project)?;
 
     let include = project.worktree_include();
@@ -45,7 +47,6 @@ pub fn new(
         return Err(F0Error::SessionExists { name }.into());
     }
 
-    let branch = project.branch_for(ticket);
     eprintln!("Leasing a {} slot for {branch}...", project.name);
     let worktree = treehouse::lease(&project, &branch, &format!("f0:{name}"))?;
     start_session(

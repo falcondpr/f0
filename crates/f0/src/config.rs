@@ -1,14 +1,30 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 
 use crate::error::F0Error;
 
 pub const MAX_TERMINALS: u8 = 6;
 
-fn default_branch_prefix() -> String {
-    "feature/".to_owned()
+pub fn default_branch_prefixes() -> Vec<String> {
+    ["feature/", "fix/", "refactor/", "chore/"]
+        .map(str::to_owned)
+        .to_vec()
+}
+
+/// `branch_prefixes` as a list, or the single string older files wrote as `branch_prefix`.
+fn one_or_many<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<String>, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum OneOrMany {
+        One(String),
+        Many(Vec<String>),
+    }
+    Ok(match OneOrMany::deserialize(deserializer)? {
+        OneOrMany::One(prefix) => vec![prefix],
+        OneOrMany::Many(prefixes) => prefixes,
+    })
 }
 
 /// A project as written in `~/.config/f0/projects/<name>.toml`. Missing `agent`,
@@ -18,8 +34,13 @@ fn default_branch_prefix() -> String {
 pub struct ProjectFile {
     pub repo: String,
     pub base: Option<String>,
-    #[serde(default = "default_branch_prefix")]
-    pub branch_prefix: String,
+    /// The first one is the default; `f0 new --type` picks another.
+    #[serde(
+        default = "default_branch_prefixes",
+        alias = "branch_prefix",
+        deserialize_with = "one_or_many"
+    )]
+    pub branch_prefixes: Vec<String>,
     pub include_file: Option<String>,
     #[serde(default)]
     pub servers: Vec<Server>,
@@ -146,7 +167,7 @@ pub struct Project {
     pub name: String,
     pub repo: PathBuf,
     pub base: Option<String>,
-    pub branch_prefix: String,
+    pub branch_prefixes: Vec<String>,
     pub include_file: Option<PathBuf>,
     pub servers: Vec<Server>,
     pub agent: Agent,
@@ -166,12 +187,16 @@ impl Project {
 
         let layout = file.layout.unwrap_or_else(|| defaults.layout.clone());
         validate(name, &file.servers, &layout)?;
+        check_branch_prefixes(&file.branch_prefixes).map_err(|reason| F0Error::InvalidProject {
+            name: name.to_owned(),
+            reason,
+        })?;
 
         Ok(Self {
             name: name.to_owned(),
             repo: expand_home(&file.repo, home),
             base: file.base,
-            branch_prefix: file.branch_prefix,
+            branch_prefixes: file.branch_prefixes,
             include_file: file.include_file.map(|f| expand_home(&f, home)),
             servers: file.servers,
             agent: file.agent.unwrap_or_else(|| defaults.agent.clone()),
@@ -238,13 +263,37 @@ impl Project {
         })
     }
 
-    pub fn branch_for(&self, ticket: &str) -> String {
-        format!("{}{}", self.branch_prefix, ticket)
+    /// The branch `f0 new` creates: the first prefix, or the one `kind` names, written
+    /// with or without its trailing `/` (`fix` or `fix/`).
+    pub fn branch_for(&self, ticket: &str, kind: Option<&str>) -> Result<String, F0Error> {
+        let prefix = match kind {
+            None => &self.branch_prefixes[0],
+            Some(kind) => self
+                .branch_prefixes
+                .iter()
+                .find(|prefix| *prefix == kind || prefix.trim_end_matches('/') == kind)
+                .ok_or_else(|| F0Error::UnknownBranchType {
+                    project: self.name.clone(),
+                    name: kind.to_owned(),
+                    available: self
+                        .branch_prefixes
+                        .iter()
+                        .map(|prefix| prefix.trim_end_matches('/'))
+                        .collect::<Vec<_>>()
+                        .join(", "),
+                })?,
+        };
+        Ok(format!("{prefix}{ticket}"))
     }
 
-    /// The part of a branch name that identifies the task, used to name its session.
+    /// The part of a branch name that identifies the task, used to name its session. The
+    /// longest prefix wins, so `fix/` does not hide a configured `fix/ui/`.
     pub fn task_from_branch<'a>(&self, branch: &'a str) -> &'a str {
-        branch.strip_prefix(&self.branch_prefix).unwrap_or(branch)
+        self.branch_prefixes
+            .iter()
+            .filter_map(|prefix| branch.strip_prefix(prefix.as_str()))
+            .min_by_key(|task| task.len())
+            .unwrap_or(branch)
     }
 }
 
@@ -260,7 +309,7 @@ pub struct ProjectDraft {
     pub base: Option<String>,
     /// The base f0 detected, shown as a hint next to `base`.
     pub detected_base: Option<String>,
-    pub branch_prefix: String,
+    pub branch_prefixes: Vec<String>,
     /// `None` when the repo has its own `.worktreeinclude`.
     pub include_file: Option<String>,
     pub servers: Vec<Server>,
@@ -284,7 +333,7 @@ impl ProjectDraft {
             repo,
             base: Some("<base branch>".to_owned()),
             detected_base,
-            branch_prefix: default_branch_prefix(),
+            branch_prefixes: default_branch_prefixes(),
             include_file,
             servers: vec![Server {
                 name: "<server name>".to_owned(),
@@ -332,11 +381,23 @@ impl ProjectDraft {
             )),
         }
 
-        out.push_str(&format!(
-            "# `f0 new APP-123` creates {prefix}APP-123.\nbranch_prefix = {}\n\n",
-            toml_string(&self.branch_prefix),
-            prefix = self.branch_prefix
-        ));
+        let prefixes = self
+            .branch_prefixes
+            .iter()
+            .map(|prefix| toml_string(prefix))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let example = match self.branch_prefixes.as_slice() {
+            [first, second, ..] => format!(
+                "`f0 new APP-123` creates {first}APP-123; `--type {}` creates {second}APP-123.",
+                second.trim_end_matches('/')
+            ),
+            [first] => format!(
+                "`f0 new APP-123` creates {first}APP-123; add prefixes to pick one with `--type`."
+            ),
+            [] => String::new(),
+        };
+        out.push_str(&format!("# {example}\nbranch_prefixes = [{prefixes}]\n\n"));
 
         match &self.include_file {
             Some(path) => out.push_str(&format!(
@@ -451,6 +512,27 @@ fn validate(name: &str, servers: &[Server], layout: &LayoutConfig) -> Result<(),
         )));
     }
 
+    Ok(())
+}
+
+/// At least one prefix, none blank or repeated. Returns why not, for `f0 init` and
+/// `f0 edit` to ask again.
+pub fn check_branch_prefixes(prefixes: &[String]) -> Result<(), String> {
+    if prefixes.is_empty() {
+        return Err("branch_prefixes needs at least one prefix, like \"feature/\"".to_owned());
+    }
+    if prefixes.iter().any(|prefix| prefix.trim().is_empty()) {
+        return Err("branch_prefixes cannot have an empty prefix".to_owned());
+    }
+    // `fix` and `fix/` would answer to the same `--type`.
+    let kind = |prefix: &str| prefix.trim_end_matches('/').to_owned();
+    if let Some((_, prefix)) = prefixes.iter().enumerate().find(|(i, prefix)| {
+        prefixes[..*i]
+            .iter()
+            .any(|earlier| kind(earlier) == kind(prefix))
+    }) {
+        return Err(format!("branch_prefixes repeats `{prefix}`"));
+    }
     Ok(())
 }
 
@@ -582,7 +664,10 @@ mod tests {
         let project = parse(r#"repo = "~/dev/hubi""#).unwrap();
         assert_eq!(project.repo, PathBuf::from("/home/me/dev/hubi"));
         assert_eq!(project.base, None);
-        assert_eq!(project.branch_prefix, "feature/");
+        assert_eq!(
+            project.branch_prefixes,
+            ["feature/", "fix/", "refactor/", "chore/"]
+        );
         assert_eq!(project.agent.cmd, "claude");
         assert_eq!(project.editor.cmd, "nvim .");
         assert_eq!(project.layout, LayoutConfig::default());
@@ -667,10 +752,54 @@ mod tests {
     }
 
     #[test]
-    fn task_strips_only_the_configured_prefix() {
+    fn branch_type_picks_the_prefix_and_defaults_to_the_first() {
         let project = parse(r#"repo = "/x""#).unwrap();
+        assert_eq!(project.branch_for("HB-1", None).unwrap(), "feature/HB-1");
+        assert_eq!(project.branch_for("HB-1", Some("fix")).unwrap(), "fix/HB-1");
+        assert_eq!(
+            project.branch_for("HB-1", Some("chore/")).unwrap(),
+            "chore/HB-1"
+        );
+        let err = project
+            .branch_for("HB-1", Some("feat"))
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("no branch type `feat`"), "{err}");
+        assert!(err.contains("feature, fix, refactor, chore"), "{err}");
+    }
+
+    #[test]
+    fn task_strips_any_configured_prefix_the_longest_first() {
+        let project = parse(
+            r#"repo = "/x"
+            branch_prefixes = ["feature/", "fix/", "fix/ui/"]"#,
+        )
+        .unwrap();
         assert_eq!(project.task_from_branch("feature/HB-1"), "HB-1");
-        assert_eq!(project.task_from_branch("fix/HB-2"), "fix/HB-2");
+        assert_eq!(project.task_from_branch("fix/HB-2"), "HB-2");
+        assert_eq!(project.task_from_branch("fix/ui/HB-3"), "HB-3");
+        assert_eq!(project.task_from_branch("chore/HB-4"), "chore/HB-4");
+    }
+
+    #[test]
+    fn single_branch_prefix_still_loads() {
+        let project = parse("repo = \"/x\"\nbranch_prefix = \"feat/\"").unwrap();
+        assert_eq!(project.branch_prefixes, ["feat/"]);
+        assert_eq!(project.branch_for("X-1", None).unwrap(), "feat/X-1");
+        assert!(project.branch_for("X-1", Some("fix")).is_err());
+        assert!(
+            parse("repo = \"/x\"\nbranch_prefix = \"a/\"\nbranch_prefixes = [\"b/\"]").is_err()
+        );
+    }
+
+    #[test]
+    fn rejects_empty_blank_or_repeated_prefixes() {
+        for prefixes in [r#"[]"#, r#"["feature/", " "]"#, r#"["fix", "fix/"]"#] {
+            let err = parse(&format!("repo = \"/x\"\nbranch_prefixes = {prefixes}"))
+                .unwrap_err()
+                .to_string();
+            assert!(err.contains("branch_prefixes"), "{prefixes}: {err}");
+        }
     }
 
     #[test]
@@ -737,7 +866,7 @@ mod tests {
             repo: "/src/app".to_owned(),
             base: None,
             detected_base: None,
-            branch_prefix: "feat/".to_owned(),
+            branch_prefixes: vec!["feat/".to_owned(), "bug/".to_owned()],
             include_file: None,
             servers: (1..=5)
                 .map(|i| Server {
@@ -761,11 +890,16 @@ mod tests {
         };
         let source = draft.render();
         assert!(!source.contains("placeholder"), "{source}");
+        assert!(
+            source.contains("`--type bug` creates bug/APP-123"),
+            "{source}"
+        );
         let project = parse(&source).unwrap();
         project.ensure_filled().unwrap();
         assert_eq!(project.base, None);
         assert_eq!(project.include_file, None);
-        assert_eq!(project.branch_for("X-1"), "feat/X-1");
+        assert_eq!(project.branch_for("X-1", None).unwrap(), "feat/X-1");
+        assert_eq!(project.branch_for("X-1", Some("bug")).unwrap(), "bug/X-1");
         assert_eq!(project.servers, draft.servers);
         assert_eq!(project.layout.terminals, 6);
         assert_eq!(project.layout.terminal_height, 30);
