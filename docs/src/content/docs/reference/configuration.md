@@ -1,0 +1,104 @@
+---
+title: Configuration
+description: Global defaults and project files.
+sidebar:
+  order: 2
+---
+
+f0 reads only personal configuration, so shared repositories need no changes. You need at least one project; `config.toml` is optional.
+
+Location, first match wins: `$F0_CONFIG_DIR`, `$XDG_CONFIG_HOME/f0`, `~/.config/f0`.
+
+```
+~/.config/f0/
+├── config.toml          global defaults
+└── projects/
+    └── my-app.toml      one file per project
+```
+
+Unknown keys are rejected so typos fail loudly. Run `f0 doctor` after any change. `f0 init` asks a few questions and writes a project file for you, and `f0 edit` changes it the same way.
+
+## Global defaults
+
+`config.toml` sets what every workspace uses. Projects fall back to it for any section they leave out.
+
+```toml
+[defaults.editor]
+cmd = "nvim ."
+
+[defaults.agent]
+cmd = "claude"
+
+[defaults.layout]
+terminals = 4
+terminal_height = 25
+agent_width = 35
+```
+
+| Key | Default | Meaning |
+|---|---|---|
+| `defaults.editor.cmd` | `nvim .` | Command for the editor pane |
+| `defaults.agent.cmd` | `claude` | Command for the agent pane |
+| `defaults.layout.terminals` | `4` | Panes in the bottom row, 1 to 6 |
+| `defaults.layout.terminal_height` | `25` | Height of the bottom row, percent of the window, 10 to 90 |
+| `defaults.layout.agent_width` | `35` | Width of the agent pane, percent of the top row, 10 to 90 |
+
+Servers belong to projects and are not allowed here.
+
+## AI agent
+
+The agent pane runs whatever command you give it, so any AI coding CLI that works in a terminal can be the agent: Claude Code (`claude`), Codex (`codex`), Gemini CLI (`gemini`), opencode (`opencode`) and so on. The pane is titled after the program, like `agent: codex`.
+
+| To use it | Set |
+|---|---|
+| In every project | `[defaults.agent] cmd = "codex"` in `config.toml` |
+| In one project | `[agent] cmd = "opencode"` in its file, or answer the question in `f0 init` and `f0 edit` |
+| In one task | `f0 new APP-123 --agent gemini` |
+
+Arguments are fine (`cmd = "codex --full-auto"`). `f0 new` and `f0 open` refuse to start when the agent's program is not installed, and `f0 doctor` checks every project's agent.
+
+## Projects
+
+`projects/<name>.toml`. The file name is the project name and the first part of every session name. f0 works only in repositories that have a project.
+
+```toml
+repo = "~/dev/my-app"
+base = "develop"
+branch_prefix = "feature/"
+# include_file = "~/.config/f0/my-app.worktreeinclude"
+
+[[servers]]
+name = "api"
+cmd = "pnpm nx serve @org/api"
+
+[[servers]]
+name = "mobile"
+cwd = "apps/mobile"
+cmd = "npx expo start -c"
+
+[agent]
+cmd = "claude"
+
+[layout]
+terminals = 4
+```
+
+| Key | Default | Meaning |
+|---|---|---|
+| `repo` | required | Main checkout. `~/` is expanded. Matched against the current directory, also from inside a slot |
+| `base` | inferred by treehouse | Branch new tasks are cut from. Exported as `F0_BASE` |
+| `branch_prefix` | `feature/` | Prefix for `f0 new` branches; stripped from session names |
+| `include_file` | `<repo>/.worktreeinclude` | File that lists the ignored files copied into every slot. It must exist; an empty file copies nothing |
+| `servers` | none | List of `name`, `cmd`, optional `cwd` (relative to the slot) and `autostart` (default `false`: the command waits for Enter) |
+| `editor`, `agent`, `layout` | global defaults | Same keys as in `config.toml`, without the `defaults.` prefix |
+
+The number of servers must fit in `layout.terminals`.
+
+## Session names
+
+| Where | Name |
+|---|---|
+| Task | `<project>/<task>`, for example `my-app/APP-123` |
+| Slot with a detached HEAD | `<project>/slot-<n>` |
+
+`.` and `:` become `_` because tmux uses them as separators.

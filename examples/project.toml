@@ -1,0 +1,28 @@
+# Copy to ~/.config/f0/projects/<name>.toml. The file name is the project name.
+
+repo = "~/dev/my-app"          # main checkout; treehouse pools its worktrees
+base = "develop"               # optional, defaults to what treehouse infers
+branch_prefix = "feature/"     # `f0 new APP-1` creates feature/APP-1
+# include_file = "~/.config/f0/my-app.worktreeinclude"  # instead of the repo's .worktreeinclude; one of them must exist
+
+# Servers wait for Enter in their pane; `f0 new APP-1 --start api` or `autostart` starts them.
+[[servers]]
+name = "api"
+cmd = "pnpm nx serve @org/api"
+autostart = true               # start with every task
+
+[[servers]]
+name = "mobile"
+cwd = "apps/mobile"
+cmd = "npx expo start -c"
+
+[agent]
+cmd = "claude"
+
+[editor]
+cmd = "nvim ."
+
+[layout]
+terminals = 4          # bottom row panes (1-6); servers first, then plain shells
+terminal_height = 25   # percent of the window
+agent_width = 35       # percent of the top row

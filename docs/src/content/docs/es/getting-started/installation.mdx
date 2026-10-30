@@ -1,0 +1,88 @@
+---
+title: Instalación
+description: Instala f0 con treehouse y, si quieres, sus configuraciones de Neovim, tmux y Ghostty.
+sidebar:
+  order: 1
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## Requisitos
+
+- macOS con [Homebrew](https://brew.sh)
+- Rust (`cargo`) para compilar la CLI
+
+El instalador agrega [treehouse](#treehouse) si falta.
+
+## Instalar
+
+<Steps>
+
+1. Clona el repositorio.
+
+   ```bash
+   git clone <repo-url> ~/dev/f0
+   ```
+
+2. Ejecuta el instalador. Elige qué instalar:
+
+   <Tabs>
+   <TabItem label="Todo">
+
+   ```bash
+   ~/dev/f0/install.sh
+   ```
+
+   Instala tmux, treehouse, Neovim, ripgrep, fd y Ghostty, y enlaza las configuraciones incluidas en `~/.config`.
+
+   </TabItem>
+   <TabItem label="Conservar mis configuraciones">
+
+   ```bash
+   ~/dev/f0/install.sh --cli-only
+   ```
+
+   Instala tmux, treehouse y la CLI `f0`. Tus configuraciones de editor, tmux y terminal no se tocan.
+
+   </TabItem>
+   </Tabs>
+
+3. Comprueba el resultado.
+
+   ```bash
+   f0 doctor
+   ```
+
+   Marca que falta un proyecto hasta que agregues uno en el [Inicio rápido](/es/getting-started/quickstart/).
+
+</Steps>
+
+## Opciones del instalador
+
+| Opción | Efecto |
+|---|---|
+| `--no-nvim` | Conserva tu configuración de Neovim (tampoco instala Neovim, ripgrep ni fd) |
+| `--no-tmux-config` | Conserva tu configuración de tmux |
+| `--no-ghostty` | Conserva tu configuración de Ghostty |
+| `--cli-only` | Equivale a las tres opciones anteriores |
+| `--yes` | Reemplaza las configuraciones existentes sin preguntar |
+
+<Aside>
+Si ya existe una configuración que no es un enlace de f0, el instalador pregunta
+antes de reemplazarla. La respuesta por defecto conserva la tuya. Lo que se
+reemplaza se mueve antes a `<ruta>.bak.<fecha>`.
+</Aside>
+
+Puedes volver a ejecutar el instalador sin riesgo: los enlaces que ya apuntan a f0 se mantienen.
+
+## Tus propias configuraciones
+
+Con `--no-nvim` o `--no-tmux-config`, f0 arma el mismo layout, pero moverte entre paneles con `Ctrl-h/j/k/l` depende de tus configuraciones. Mira [Atajos](/es/reference/keybindings/#con-tus-propias-configuraciones).
+
+## treehouse
+
+Cada tarea de f0 corre en su propio worktree de treehouse, así que treehouse es obligatorio. El instalador ejecuta `brew install treehouse` salvo que ya haya un `treehouse` en tu `PATH`.
+
+## Desinstalar
+
+Borra los enlaces de `~/.config` (`nvim`, `tmux`, `ghostty/config`), restaura las carpetas `.bak.*` si quieres recuperar tus configuraciones anteriores y ejecuta `cargo uninstall f0`. Desinstala treehouse con `brew uninstall treehouse` si nada más lo usa.

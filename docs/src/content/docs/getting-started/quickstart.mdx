@@ -1,0 +1,67 @@
+---
+title: Quickstart
+description: Start a task with its own worktree and workspace in a few minutes.
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Every task gets its own worktree, so each repository needs two things: a project file and a `.worktreeinclude`.
+
+<Steps>
+
+1. Create the project file from inside the repository:
+
+   ```bash
+   cd ~/dev/my-app
+   f0 init
+   ```
+
+   It asks for the project name, base branch, env files and dev servers, and writes `~/.config/f0/projects/my-app.toml`. The file name is the project name. The result looks like this. Change it later with `f0 edit`, or by hand:
+
+   ```toml
+   repo = "~/dev/my-app"
+   base = "develop"
+
+   [[servers]]
+   name = "api"
+   cmd = "pnpm dev:api"
+
+   [[servers]]
+   name = "web"
+   cmd = "pnpm dev:web"
+   ```
+
+2. List the ignored files every worktree needs (usually `.env`) in `.worktreeinclude` at the repository root:
+
+   ```
+   apps/api/.env
+   apps/web/.env
+   ```
+
+   f0 does not start a task without this file. If the project needs no ignored files, leave it empty. When the repository has no `.worktreeinclude`, `f0 init` offers the `.env` files it finds and keeps the list in your config folder instead, so repositories you cannot commit to work too.
+
+3. Start a task from anywhere inside the repository:
+
+   ```bash
+   f0 doctor
+   f0 new APP-123
+   ```
+
+   f0 creates `feature/APP-123` from `develop` in a fresh slot and opens a tmux session called `my-app/APP-123` with the editor and the agent running. Each server pane has its command typed and waiting: press Enter in the ones you need, or start them with the task using `f0 new APP-123 --start api`.
+
+4. Work. Detach with `Ctrl-a d` whenever you want; everything keeps running. Come back with `f0 switch` or `f0 open APP-123`.
+
+5. When the task is merged, return the slot from another terminal:
+
+   ```bash
+   f0 done APP-123  # or the slot id from `f0 ls`, like my-app/4
+   ```
+
+</Steps>
+
+<Aside type="tip">
+Run `f0 doctor` after editing a project file. It validates every key and checks
+that the editor and agent commands exist.
+</Aside>

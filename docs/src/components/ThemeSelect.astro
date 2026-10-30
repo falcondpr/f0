@@ -1,0 +1,98 @@
+---
+import { Icon } from '@astrojs/starlight/components';
+
+const options = [
+	{ value: 'light', icon: 'sun', label: Astro.locals.t('themeSelect.light') },
+	{ value: 'dark', icon: 'moon', label: Astro.locals.t('themeSelect.dark') },
+	{ value: 'auto', icon: 'laptop', label: Astro.locals.t('themeSelect.auto') },
+] as const;
+---
+
+<f0-theme-toggle role="group" aria-label={Astro.locals.t('themeSelect.accessibleLabel')}>
+	{
+		options.map(({ value, icon, label }) => (
+			<button type="button" data-theme-value={value} aria-label={label} title={label} aria-pressed="false">
+				<Icon name={icon} size="0.875rem" />
+			</button>
+		))
+	}
+</f0-theme-toggle>
+
+{/* Inline so the pressed button is right on first paint, like Starlight's own picker. */}
+<script is:inline>
+	(() => {
+		const stored = localStorage.getItem('starlight-theme') || 'auto';
+		document.querySelectorAll('f0-theme-toggle button').forEach((button) => {
+			button.setAttribute('aria-pressed', String(button.dataset.themeValue === stored));
+		});
+	})();
+</script>
+
+<script>
+	type Theme = 'auto' | 'dark' | 'light';
+
+	// Same key and values as Starlight's ThemeProvider, which reads it before first paint.
+	const storageKey = 'starlight-theme';
+
+	const parseTheme = (theme: unknown): Theme =>
+		theme === 'dark' || theme === 'light' ? theme : 'auto';
+
+	const loadTheme = (): Theme => parseTheme(localStorage.getItem(storageKey));
+
+	const systemTheme = (): Theme =>
+		matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+
+	function applyTheme(theme: Theme): void {
+		document.documentElement.dataset.theme = theme === 'auto' ? systemTheme() : theme;
+		localStorage.setItem(storageKey, theme === 'auto' ? '' : theme);
+		document.querySelectorAll<HTMLButtonElement>('f0-theme-toggle button').forEach((button) => {
+			button.setAttribute('aria-pressed', String(button.dataset.themeValue === theme));
+		});
+	}
+
+	matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+		if (loadTheme() === 'auto') applyTheme('auto');
+	});
+
+	class F0ThemeToggle extends HTMLElement {
+		connectedCallback() {
+			this.querySelectorAll<HTMLButtonElement>('button').forEach((button) => {
+				button.addEventListener('click', () => applyTheme(parseTheme(button.dataset.themeValue)));
+			});
+		}
+	}
+	customElements.define('f0-theme-toggle', F0ThemeToggle);
+</script>
+
+<style>
+	f0-theme-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.125rem;
+		padding: 0.1875rem;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 999px;
+	}
+
+	button {
+		display: grid;
+		place-items: center;
+		width: 1.625rem;
+		height: 1.625rem;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: var(--sl-color-gray-3);
+		cursor: pointer;
+	}
+
+	button:hover {
+		color: var(--sl-color-white);
+	}
+
+	button[aria-pressed='true'] {
+		background: var(--f0-accent-surface);
+		box-shadow: 0 0 0 1px var(--sl-color-hairline-light);
+		color: var(--sl-color-white);
+	}
+</style>

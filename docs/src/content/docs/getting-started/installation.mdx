@@ -1,0 +1,88 @@
+---
+title: Installation
+description: Install f0 with treehouse and, optionally, its Neovim, tmux and Ghostty configs.
+sidebar:
+  order: 1
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## Requirements
+
+- macOS with [Homebrew](https://brew.sh)
+- Rust (`cargo`) to build the CLI
+
+The installer adds [treehouse](#treehouse) if it is missing.
+
+## Install
+
+<Steps>
+
+1. Clone the repository.
+
+   ```bash
+   git clone <repo-url> ~/dev/f0
+   ```
+
+2. Run the installer. Pick what to install:
+
+   <Tabs>
+   <TabItem label="Everything">
+
+   ```bash
+   ~/dev/f0/install.sh
+   ```
+
+   Installs tmux, treehouse, Neovim, ripgrep, fd and Ghostty, and links the bundled configs into `~/.config`.
+
+   </TabItem>
+   <TabItem label="Keep my configs">
+
+   ```bash
+   ~/dev/f0/install.sh --cli-only
+   ```
+
+   Installs tmux, treehouse and the `f0` CLI. Your editor, tmux and terminal configs are left alone.
+
+   </TabItem>
+   </Tabs>
+
+3. Check the result.
+
+   ```bash
+   f0 doctor
+   ```
+
+   It reports a missing project until you add one in the [Quickstart](/getting-started/quickstart/).
+
+</Steps>
+
+## Installer options
+
+| Flag | Effect |
+|---|---|
+| `--no-nvim` | Keep your own Neovim config (Neovim, ripgrep and fd are not installed either) |
+| `--no-tmux-config` | Keep your own tmux config |
+| `--no-ghostty` | Keep your own Ghostty config |
+| `--cli-only` | Same as the three flags above |
+| `--yes` | Replace existing configs without asking |
+
+<Aside>
+When a config already exists and is not an f0 link, the installer asks before
+replacing it. The default answer keeps yours. Anything replaced is moved to
+`<path>.bak.<timestamp>` first.
+</Aside>
+
+The installer can run again safely: links that already point to f0 are kept.
+
+## Your own configs
+
+With `--no-nvim` or `--no-tmux-config`, f0 still builds the same layout, but moving between panes with `Ctrl-h/j/k/l` depends on your configs. See [Key bindings](/reference/keybindings/#with-your-own-configs).
+
+## treehouse
+
+Every f0 task runs in its own treehouse worktree, so treehouse is required. The installer runs `brew install treehouse` unless a `treehouse` is already in your `PATH`.
+
+## Uninstall
+
+Remove the links in `~/.config` (`nvim`, `tmux`, `ghostty/config`), restore the `.bak.*` folders if you want your previous configs back, and run `cargo uninstall f0`. Uninstall treehouse with `brew uninstall treehouse` if nothing else uses it.

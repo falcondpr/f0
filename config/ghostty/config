@@ -1,0 +1,6 @@
+# f0 additions. Colors stay in Ghostty's own config file.
+font-family = JetBrainsMono Nerd Font
+font-size = 14
+macos-option-as-alt = true
+window-save-state = always
+shell-integration-features = no-cursor

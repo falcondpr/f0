@@ -1,0 +1,37 @@
+---
+title: f0
+description: A worktree-first terminal workspace for AI-assisted development, built on tmux, Neovim and treehouse.
+template: splash
+hero:
+  tagline: One command per task. Its own worktree, its own editor, agent and servers, all in one tmux window.
+  actions:
+    - text: Get started
+      link: /getting-started/installation/
+      icon: right-arrow
+    - text: How a task works
+      link: /guides/workflow/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import WorkspaceShowcase from '../../components/WorkspaceShowcase.astro';
+
+<WorkspaceShowcase />
+
+<CardGrid>
+	<Card title="Worktree per task" icon="seti:git">
+		`f0 new APP-123` leases a treehouse slot on a fresh branch, with your `.env`
+		files already copied.
+	</Card>
+	<Card title="Same layout everywhere" icon="laptop">
+		Editor, AI agent and up to six terminals, arranged the same way for every
+		task and every folder.
+	</Card>
+	<Card title="Review every change" icon="magnifier">
+		Side-by-side diffs that scroll together, also sideways through long lines.
+	</Card>
+	<Card title="Bring your own editor" icon="puzzle">
+		Keep your own Neovim, tmux and terminal configs. The bundled ones are
+		installed only if you want them.
+	</Card>
+</CardGrid>

@@ -1,0 +1,38 @@
+---
+title: f0
+description: Un espacio de trabajo de terminal centrado en worktrees para desarrollar con IA, sobre tmux, Neovim y treehouse.
+template: splash
+hero:
+  tagline: Un comando por tarea. Su propio worktree, su editor, su agente y sus servidores, todo en una ventana de tmux.
+  actions:
+    - text: Empezar
+      link: /es/getting-started/installation/
+      icon: right-arrow
+    - text: Cómo funciona una tarea
+      link: /es/guides/workflow/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import WorkspaceShowcase from '../../../components/WorkspaceShowcase.astro';
+
+<WorkspaceShowcase />
+
+<CardGrid>
+	<Card title="Un worktree por tarea" icon="seti:git">
+		`f0 new APP-123` reserva un slot de treehouse en una rama nueva, con tus
+		archivos `.env` ya copiados.
+	</Card>
+	<Card title="El mismo layout siempre" icon="laptop">
+		Editor, agente de IA y hasta seis terminales, ordenados igual en cada tarea
+		y en cada carpeta.
+	</Card>
+	<Card title="Revisa cada cambio" icon="magnifier">
+		Diffs lado a lado que se desplazan juntos, también en horizontal en líneas
+		largas.
+	</Card>
+	<Card title="Usa tu propio editor" icon="puzzle">
+		Conserva tus configuraciones de Neovim, tmux y terminal. Las incluidas
+		se instalan solo si las quieres.
+	</Card>
+</CardGrid>

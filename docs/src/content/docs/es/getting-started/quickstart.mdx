@@ -1,0 +1,67 @@
+---
+title: Inicio rápido
+description: Empieza una tarea con su propio worktree y espacio de trabajo en pocos minutos.
+sidebar:
+  order: 2
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Cada tarea tiene su propio worktree, así que cada repositorio necesita dos cosas: un archivo de proyecto y un `.worktreeinclude`.
+
+<Steps>
+
+1. Crea el archivo del proyecto desde el repositorio:
+
+   ```bash
+   cd ~/dev/my-app
+   f0 init
+   ```
+
+   Pregunta el nombre del proyecto, la rama base, los archivos env y los servidores, y escribe `~/.config/f0/projects/my-app.toml`. El nombre del archivo es el nombre del proyecto. El resultado queda así. Cámbialo después con `f0 edit` o a mano:
+
+   ```toml
+   repo = "~/dev/my-app"
+   base = "develop"
+
+   [[servers]]
+   name = "api"
+   cmd = "pnpm dev:api"
+
+   [[servers]]
+   name = "web"
+   cmd = "pnpm dev:web"
+   ```
+
+2. Lista los archivos ignorados que necesita cada worktree (normalmente `.env`) en `.worktreeinclude`, en la raíz del repositorio:
+
+   ```
+   apps/api/.env
+   apps/web/.env
+   ```
+
+   f0 no empieza una tarea sin este archivo. Si el proyecto no necesita archivos ignorados, déjalo vacío. Si el repositorio no tiene `.worktreeinclude`, `f0 init` te ofrece los `.env` que encuentra y guarda la lista en tu carpeta de config, así también funcionan los repositorios en los que no puedes commitear.
+
+3. Empieza una tarea desde cualquier lugar del repositorio:
+
+   ```bash
+   f0 doctor
+   f0 new APP-123
+   ```
+
+   f0 crea `feature/APP-123` desde `develop` en un slot nuevo y abre una sesión de tmux llamada `my-app/APP-123` con el editor y el agente en marcha. Cada panel de servidor tiene su comando escrito y esperando: aprieta Enter en los que necesites, o arráncalos con la tarea usando `f0 new APP-123 --start api`.
+
+4. Trabaja. Desconéctate con `Ctrl-a d` cuando quieras: todo sigue corriendo. Vuelve con `f0 switch` o `f0 open APP-123`.
+
+5. Cuando la tarea esté mergeada, devuelve el slot desde otra terminal:
+
+   ```bash
+   f0 done APP-123  # o el id del slot que muestra `f0 ls`, como my-app/4
+   ```
+
+</Steps>
+
+<Aside type="tip">
+Ejecuta `f0 doctor` después de editar un proyecto. Valida cada clave y comprueba
+que existan los comandos del editor y del agente.
+</Aside>
