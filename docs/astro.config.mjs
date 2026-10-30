@@ -45,6 +45,8 @@ export default defineConfig({
 				es: { label: 'Español', lang: 'es' },
 			},
 			sidebar: [
+				// Outside the groups and styled as a shortcut in custom.css, so visitors notice it.
+				{ slug: 'cheatsheet', attrs: { class: 'sidebar-cheatsheet' } },
 				{
 					label: 'Getting started',
 					translations: { es: 'Primeros pasos' },
