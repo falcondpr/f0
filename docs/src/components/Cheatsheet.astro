@@ -1,0 +1,580 @@
+---
+type Row = { cmd?: string; keys?: string[]; text: string };
+type Group = { title: string; more: string; rows: Row[] };
+
+// TODO: generate the f0 rows from the clap definitions in crates/f0/src/main.rs, so a new
+// command or flag shows up here without editing this file by hand.
+const copy = {
+	en: {
+		filter: 'Filter',
+		placeholder: 'Filter commands and keys',
+		zen: 'Zen mode',
+		exitZen: 'Exit zen mode',
+		empty: 'Nothing matches',
+		hint: 'Press / to filter, z for zen mode, Esc to leave it.',
+		more: 'Reference',
+		groups: [
+			{
+				title: 'Start a task',
+				more: '/reference/cli/#f0-new',
+				rows: [
+					{ cmd: 'f0 new APP-1', text: 'New slot on feature/APP-1, workspace open' },
+					{ cmd: 'f0 new APP-1 --type fix', text: 'Branch fix/APP-1 instead; any of branch_prefixes' },
+					{ cmd: 'f0 new APP-1 --start api,web', text: 'Start those servers right away' },
+					{ cmd: 'f0 new APP-1 --agent codex', text: 'Another AI agent for this task' },
+				],
+			},
+			{
+				title: 'Move between tasks',
+				more: '/reference/cli/#f0-ls',
+				rows: [
+					{ cmd: 'f0 ls', text: 'Slots and sessions of every project' },
+					{ cmd: 'f0 switch', text: 'Jump to another task' },
+					{ cmd: 'f0 open APP-1', text: 'Rebuild a task after a restart, resuming the agent' },
+					{ keys: ['Ctrl-a', 's'], text: 'Pick a session' },
+					{ keys: ['Ctrl-a', 'd'], text: 'Detach; everything keeps running' },
+				],
+			},
+			{
+				title: 'Panes',
+				more: '/reference/keybindings/#tmux',
+				rows: [
+					{ keys: ['Ctrl-h/j/k/l'], text: 'Move between panes and Neovim splits' },
+					{ keys: ['Ctrl-a', 'z'], text: 'Zoom the current pane' },
+					{ keys: ['Ctrl-a', '['], text: 'Scroll back; v selects, y copies' },
+					{ keys: ['Ctrl-a', 'r'], text: 'Reload the tmux config' },
+				],
+			},
+			{
+				title: 'Editor',
+				more: '/reference/keybindings/#files-and-search',
+				rows: [
+					{ keys: ['Space', 'ff'], text: 'Find files' },
+					{ keys: ['Space', 'fg'], text: 'Search text in the project' },
+					{ keys: ['Space', 'e'], text: 'Toggle the explorer' },
+					{ keys: ['Space', 'gm'], text: 'Toggle the changed files panel' },
+					{ keys: ['Space', 'ui'], text: 'Restore the three-column layout' },
+				],
+			},
+			{
+				title: 'Review changes',
+				more: '/reference/keybindings/#git',
+				rows: [
+					{ keys: [']c', '[c'], text: 'Next / previous change' },
+					{ keys: ['Space', 'gp'], text: 'Preview the change' },
+					{ keys: ['Space', 'gd'], text: 'Diff of uncommitted changes' },
+					{ keys: ['Space', 'gD'], text: 'Diff of the branch against its base' },
+					{ keys: ['Space', 'gq'], text: 'Close the diff' },
+				],
+			},
+			{
+				title: 'Finish',
+				more: '/reference/cli/#f0-done',
+				rows: [
+					{ keys: ['Ctrl-a', 'X'], text: 'Close the task and return its slot, after asking' },
+					{ cmd: 'f0 done', text: 'The same, typed in any pane of the session' },
+					{ cmd: 'f0 done APP-1', text: 'From any terminal' },
+					{ cmd: 'f0 done APP-1 --force', text: 'Discard uncommitted changes without asking' },
+				],
+			},
+			{
+				title: 'Set up',
+				more: '/reference/cli/#f0-init',
+				rows: [
+					{ cmd: 'f0 init', text: 'Add the repo you are in as a project' },
+					{ cmd: 'f0 edit', text: 'Change its project file, question by question' },
+					{ cmd: 'f0 doctor', text: 'Check tools and project configs' },
+				],
+			},
+		],
+	},
+	es: {
+		filter: 'Filtrar',
+		placeholder: 'Filtrar comandos y teclas',
+		zen: 'Modo zen',
+		exitZen: 'Salir del modo zen',
+		empty: 'Nada coincide',
+		hint: 'Aprieta / para filtrar, z para el modo zen y Esc para salir.',
+		more: 'Referencia',
+		groups: [
+			{
+				title: 'Empezar una tarea',
+				more: '/es/reference/cli/#f0-new',
+				rows: [
+					{ cmd: 'f0 new APP-1', text: 'Slot nuevo en feature/APP-1, con el espacio de trabajo abierto' },
+					{ cmd: 'f0 new APP-1 --type fix', text: 'Rama fix/APP-1 en su lugar; cualquiera de branch_prefixes' },
+					{ cmd: 'f0 new APP-1 --start api,web', text: 'Arranca esos servidores enseguida' },
+					{ cmd: 'f0 new APP-1 --agent codex', text: 'Otro agente de IA para esta tarea' },
+				],
+			},
+			{
+				title: 'Moverse entre tareas',
+				more: '/es/reference/cli/#f0-ls',
+				rows: [
+					{ cmd: 'f0 ls', text: 'Slots y sesiones de cada proyecto' },
+					{ cmd: 'f0 switch', text: 'Saltar a otra tarea' },
+					{ cmd: 'f0 open APP-1', text: 'Reconstruye una tarea tras un reinicio, retomando el agente' },
+					{ keys: ['Ctrl-a', 's'], text: 'Elegir una sesión' },
+					{ keys: ['Ctrl-a', 'd'], text: 'Desconectarse; todo sigue corriendo' },
+				],
+			},
+			{
+				title: 'Paneles',
+				more: '/es/reference/keybindings/#tmux',
+				rows: [
+					{ keys: ['Ctrl-h/j/k/l'], text: 'Moverse entre paneles y ventanas de Neovim' },
+					{ keys: ['Ctrl-a', 'z'], text: 'Ampliar el panel actual' },
+					{ keys: ['Ctrl-a', '['], text: 'Desplazarse hacia atrás; v selecciona, y copia' },
+					{ keys: ['Ctrl-a', 'r'], text: 'Recargar la configuración de tmux' },
+				],
+			},
+			{
+				title: 'Editor',
+				more: '/es/reference/keybindings/#archivos-y-búsqueda',
+				rows: [
+					{ keys: ['Space', 'ff'], text: 'Buscar archivos' },
+					{ keys: ['Space', 'fg'], text: 'Buscar texto en el proyecto' },
+					{ keys: ['Space', 'e'], text: 'Mostrar u ocultar el explorador' },
+					{ keys: ['Space', 'gm'], text: 'Mostrar u ocultar el panel de archivos modificados' },
+					{ keys: ['Space', 'ui'], text: 'Restaurar el layout de tres columnas' },
+				],
+			},
+			{
+				title: 'Revisar cambios',
+				more: '/es/reference/keybindings/#git',
+				rows: [
+					{ keys: [']c', '[c'], text: 'Cambio siguiente / anterior' },
+					{ keys: ['Space', 'gp'], text: 'Previsualizar el cambio' },
+					{ keys: ['Space', 'gd'], text: 'Diff de los cambios sin commitear' },
+					{ keys: ['Space', 'gD'], text: 'Diff de la rama contra su base' },
+					{ keys: ['Space', 'gq'], text: 'Cerrar el diff' },
+				],
+			},
+			{
+				title: 'Terminar',
+				more: '/es/reference/cli/#f0-done',
+				rows: [
+					{ keys: ['Ctrl-a', 'X'], text: 'Cierra la tarea y devuelve su slot, después de preguntar' },
+					{ cmd: 'f0 done', text: 'Lo mismo, escrito en cualquier panel de la sesión' },
+					{ cmd: 'f0 done APP-1', text: 'Desde cualquier terminal' },
+					{ cmd: 'f0 done APP-1 --force', text: 'Descarta los cambios sin commitear sin preguntar' },
+				],
+			},
+			{
+				title: 'Configurar',
+				more: '/es/reference/cli/#f0-init',
+				rows: [
+					{ cmd: 'f0 init', text: 'Agrega el repo en el que estás como proyecto' },
+					{ cmd: 'f0 edit', text: 'Cambia su archivo de proyecto, pregunta por pregunta' },
+					{ cmd: 'f0 doctor', text: 'Revisa las herramientas y las configuraciones' },
+				],
+			},
+		],
+	},
+} satisfies Record<string, { groups: Group[]; [key: string]: unknown }>;
+
+const t = copy[Astro.currentLocale === 'es' ? 'es' : 'en'];
+---
+
+<script is:inline>
+	// Before the first paint, so a page opened in zen mode does not flash the header.
+	if (localStorage.getItem('f0-cheatsheet-zen') === 'on') document.documentElement.dataset.f0Zen = '';
+</script>
+
+<f0-cheatsheet class="not-content" data-zen-label={t.zen} data-exit-label={t.exitZen}>
+	<div class="toolbar">
+		<label class="filter">
+			<span class="sr-only">{t.filter}</span>
+			<input type="search" placeholder={t.placeholder} autocomplete="off" spellcheck="false" />
+			<kbd aria-hidden="true">/</kbd>
+		</label>
+		<button type="button" class="zen" aria-pressed="false">
+			<span>{t.zen}</span>
+			<kbd aria-hidden="true">z</kbd>
+		</button>
+	</div>
+	<p class="hint">{t.hint}</p>
+
+	<div class="grid">
+		{
+			t.groups.map((group) => (
+				<section>
+					<header>
+						<h2>{group.title}</h2>
+						<a href={group.more}>{t.more}</a>
+					</header>
+					<dl>
+						{group.rows.map((row) => (
+							<div class="row">
+								<dt>
+									{row.cmd ? (
+										<code>{row.cmd}</code>
+									) : (
+										row.keys?.map((key) => <kbd>{key}</kbd>)
+									)}
+								</dt>
+								<dd>{row.text}</dd>
+							</div>
+						))}
+					</dl>
+				</section>
+			))
+		}
+	</div>
+	<p class="empty" hidden>{t.empty}</p>
+</f0-cheatsheet>
+
+<script>
+	const ZEN_KEY = 'f0-cheatsheet-zen';
+
+	class Cheatsheet extends HTMLElement {
+		connectedCallback() {
+			const input = this.querySelector<HTMLInputElement>('input');
+			const zen = this.querySelector<HTMLButtonElement>('.zen');
+			if (!input || !zen) return;
+
+			input.addEventListener('input', () => this.#filter(input.value));
+			zen.addEventListener('click', () => this.#setZen(!this.#isZen()));
+			this.#setZen(this.#isZen());
+
+			window.addEventListener('keydown', (e) => {
+				if (e.metaKey || e.ctrlKey || e.altKey) return;
+				if (e.target === input) {
+					if (e.key === 'Escape') {
+						input.value = '';
+						this.#filter('');
+						input.blur();
+					}
+					return;
+				}
+				// Leave keys alone while the reader types anywhere else, like the search dialog.
+				if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select, [contenteditable], dialog')) return;
+				if (e.key === '/') {
+					e.preventDefault();
+					input.focus();
+				} else if (e.key === 'z') {
+					this.#setZen(!this.#isZen());
+				} else if (e.key === 'Escape' && this.#isZen()) {
+					this.#setZen(false);
+				}
+			});
+		}
+
+		#isZen() {
+			return document.documentElement.dataset.f0Zen !== undefined;
+		}
+
+		#setZen(on: boolean) {
+			const zen = this.querySelector<HTMLButtonElement>('.zen');
+			const label = zen?.querySelector('span');
+			if (on) document.documentElement.dataset.f0Zen = '';
+			else delete document.documentElement.dataset.f0Zen;
+			localStorage.setItem(ZEN_KEY, on ? 'on' : 'off');
+			zen?.setAttribute('aria-pressed', String(on));
+			if (label) label.textContent = (on ? this.dataset.exitLabel : this.dataset.zenLabel) ?? '';
+		}
+
+		#filter(query: string) {
+			const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+			let shown = 0;
+			for (const section of this.querySelectorAll('section')) {
+				let rows = 0;
+				for (const row of section.querySelectorAll<HTMLElement>('.row')) {
+					const text = `${section.querySelector('h2')?.textContent} ${row.textContent}`.toLowerCase();
+					const match = words.every((word) => text.includes(word));
+					row.hidden = !match;
+					if (match) rows++;
+				}
+				section.hidden = rows === 0;
+				shown += rows;
+			}
+			const empty = this.querySelector<HTMLElement>('.empty');
+			if (empty) empty.hidden = shown > 0;
+		}
+	}
+
+	customElements.define('f0-cheatsheet', Cheatsheet);
+</script>
+
+<style>
+	f0-cheatsheet {
+		display: block;
+		margin-top: 0.5rem;
+	}
+
+	.toolbar {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.filter {
+		position: relative;
+		flex: 1 1 10rem;
+	}
+
+	.filter input {
+		width: 100%;
+		height: 2.5rem;
+		padding: 0 2.5rem 0 0.9rem;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 0.75rem;
+		background: var(--f0-surface);
+		color: var(--sl-color-white);
+		font: inherit;
+		font-size: var(--sl-text-sm);
+	}
+
+	.filter input:focus {
+		outline: 2px solid var(--sl-color-accent);
+		outline-offset: -1px;
+	}
+
+	.filter kbd {
+		position: absolute;
+		inset-block: 0;
+		inset-inline-end: 0.6rem;
+		margin-block: auto;
+		height: fit-content;
+	}
+
+	.zen {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
+		height: 2.5rem;
+		padding: 0 0.9rem;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 0.75rem;
+		background: var(--f0-surface);
+		color: var(--sl-color-gray-2);
+		font: inherit;
+		font-size: var(--sl-text-sm);
+		cursor: pointer;
+	}
+
+	.zen:hover,
+	.zen[aria-pressed='true'] {
+		border-color: var(--sl-color-gray-4);
+		color: var(--sl-color-white);
+	}
+
+	.hint {
+		margin: 0.6rem 0 0;
+		color: var(--sl-color-gray-3);
+		font-size: var(--sl-text-xs);
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr));
+		gap: 1rem;
+		margin-top: 1.5rem;
+	}
+
+	section {
+		padding: 1rem 1.1rem 0.6rem;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-radius: 0.75rem;
+		background: var(--f0-surface);
+	}
+
+	section[hidden],
+	.row[hidden] {
+		display: none;
+	}
+
+	header {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.5rem;
+	}
+
+	/* One class more than Starlight's `.sl-markdown-content h2`, which adds a top margin. */
+	f0-cheatsheet .grid h2 {
+		margin: 0;
+		color: var(--sl-color-white);
+		font-size: var(--sl-text-sm);
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+	}
+
+	header a {
+		color: var(--sl-color-gray-3);
+		font-size: var(--sl-text-xs);
+		text-decoration: none;
+	}
+
+	header a:hover {
+		color: var(--sl-color-text-accent);
+	}
+
+	/* Rows share the dl's columns through subgrid, so every key column in a card lines up
+	   and is as wide as its longest command, up to 60% of the card. */
+	f0-cheatsheet .grid dl {
+		display: grid;
+		grid-template-columns: fit-content(60%) 1fr;
+		column-gap: 0.9rem;
+		margin: 0;
+	}
+
+	.row {
+		display: grid;
+		grid-column: 1 / -1;
+		grid-template-columns: subgrid;
+		align-items: baseline;
+		padding: 0.45rem 0;
+		border-top: 1px solid var(--sl-color-hairline);
+	}
+
+	.row:first-child {
+		border-top: 0;
+	}
+
+	dt {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+		min-width: 0;
+	}
+
+	f0-cheatsheet .row dd {
+		margin: 0;
+		color: var(--sl-color-gray-2);
+		font-size: var(--sl-text-sm);
+		line-height: 1.4;
+	}
+
+	/* Beats Starlight's `.sl-markdown-content :not(pre) > code` chip. */
+	f0-cheatsheet .row dt code {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--sl-color-text-accent);
+		font-family: var(--sl-font-mono);
+		font-size: 0.8125rem;
+		overflow-wrap: anywhere;
+	}
+
+	f0-cheatsheet kbd {
+		padding: 0.05rem 0.4rem;
+		border: 1px solid var(--sl-color-hairline-light);
+		border-bottom-width: 2px;
+		border-radius: 0.3rem;
+		background: var(--sl-color-black);
+		color: var(--sl-color-white);
+		font-family: var(--sl-font-mono);
+		font-size: 0.75rem;
+		line-height: 1.4;
+		white-space: nowrap;
+	}
+
+	.empty {
+		margin-top: 2rem;
+		color: var(--sl-color-gray-3);
+		text-align: center;
+	}
+
+	@media (max-width: 30rem) {
+		f0-cheatsheet .grid dl {
+			grid-template-columns: 1fr;
+		}
+
+		.row {
+			row-gap: 0.25rem;
+		}
+	}
+
+	/* Two columns of cards need more room than a page of prose. */
+	:global(:root:has(f0-cheatsheet)) {
+		--sl-content-width: 72rem;
+	}
+
+	/* Zen mode: only the commands, on a plain background, like VS Code's. */
+	:global(:root[data-f0-zen]:has(f0-cheatsheet)) {
+		--sl-nav-height: 0rem;
+		--sl-sidebar-width: 0rem;
+		--sl-content-width: 80rem;
+	}
+
+	:global(html[data-f0-zen] body) {
+		background: var(--sl-color-black);
+	}
+
+	:global(html[data-f0-zen] .page > .header),
+	:global(html[data-f0-zen] .sidebar-pane),
+	:global(html[data-f0-zen] .content-panel:has(h1)),
+	:global(html[data-f0-zen] .main-frame footer) {
+		display: none;
+	}
+
+	:global(html[data-f0-zen]) .hint {
+		display: none;
+	}
+
+	:global(html[data-f0-zen]) f0-cheatsheet {
+		max-width: 80rem;
+		margin: 0 auto;
+		padding-block: 2rem;
+	}
+
+	/* Without a keyboard the shortcuts in the toolbar and the hint only take room. */
+	@media (hover: none) {
+		.toolbar kbd,
+		.hint {
+			display: none;
+		}
+
+		.filter input {
+			padding-inline-end: 0.9rem;
+		}
+	}
+
+	@media print {
+		:global(.page > .header),
+		:global(.sidebar-pane),
+		:global(.main-frame footer),
+		.toolbar,
+		.hint,
+		header a {
+			display: none;
+		}
+
+		:global(body) {
+			background: #fff;
+		}
+
+		.grid {
+			grid-template-columns: repeat(2, 1fr);
+			gap: 0.5rem;
+			margin-top: 0;
+		}
+
+		section {
+			break-inside: avoid;
+			padding: 0.5rem 0.7rem 0.3rem;
+			border-color: #ccc;
+			background: #fff;
+		}
+
+		f0-cheatsheet .grid h2,
+		f0-cheatsheet .row dt code,
+		f0-cheatsheet kbd,
+		f0-cheatsheet .row dd {
+			color: #000;
+		}
+
+		kbd {
+			background: #fff;
+			border-color: #999;
+		}
+
+		.row {
+			padding: 0.2rem 0;
+			border-color: #e5e5e5;
+		}
+	}
+</style>
