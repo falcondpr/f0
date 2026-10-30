@@ -56,6 +56,12 @@ pub fn ignored_env_files(path: &Path) -> Result<Vec<String>, F0Error> {
     Ok(files.lines().map(str::to_owned).collect())
 }
 
+/// Files with uncommitted changes, untracked ones included.
+pub fn changed_files(path: &Path) -> Result<usize, F0Error> {
+    let status = process::output("git", ["status", "--porcelain"], Some(path))?;
+    Ok(status.lines().count())
+}
+
 /// Current branch, or `None` when HEAD is detached.
 pub fn current_branch(path: &Path) -> Result<Option<String>, F0Error> {
     let branch = process::output("git", ["branch", "--show-current"], Some(path))?;

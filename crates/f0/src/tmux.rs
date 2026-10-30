@@ -54,6 +54,69 @@ pub fn current_session() -> Option<String> {
     .ok()
 }
 
+/// Asks in the status line of the client showing `session`, then runs `template` with
+/// `run-shell -b`, which reads `args` as `#{1}`, `#{2}`... The job belongs to the tmux
+/// server, so it outlives every pane of the session.
+pub fn confirm_then_run(
+    session: &str,
+    prompt: &str,
+    template: &str,
+    args: &[&str],
+) -> Result<(), F0Error> {
+    let client = tmux(&[
+        "list-clients",
+        "-t",
+        &exact(session),
+        "-F",
+        "#{client_name}",
+    ])?;
+    let Some(client) = client.lines().next() else {
+        return Err(F0Error::NoClient {
+            session: session.to_owned(),
+        });
+    };
+    let command = std::iter::once("run-shell -b".to_owned())
+        .chain(
+            std::iter::once(template)
+                .chain(args.iter().copied())
+                .map(quote),
+        )
+        .collect::<Vec<_>>()
+        .join(" ");
+    tmux(&[
+        "confirm-before",
+        "-t",
+        client,
+        "-p",
+        &prompt.replace('#', "##"),
+        &command,
+    ])
+    .map(drop)
+}
+
+/// Runs `template` with `run-shell -b` right away, like `confirm_then_run` once
+/// confirmed.
+pub fn run_in_background(template: &str, args: &[&str]) -> Result<(), F0Error> {
+    let mut command = vec!["run-shell", "-b", template];
+    command.extend(args);
+    tmux(&command).map(drop)
+}
+
+/// `value` as one argument of a tmux command string, such as the command
+/// `confirm-before` runs. Inside double quotes tmux expands `$VAR` and escapes.
+fn quote(value: &str) -> String {
+    let mut out = String::with_capacity(value.len() + 2);
+    out.push('"');
+    for c in value.chars() {
+        if matches!(c, '"' | '\\' | '$') {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out.push('"');
+    out
+}
+
 pub fn create_session(name: &str, worktree: &Path, layout: &Layout) -> Result<(), F0Error> {
     let root = layout.panes[0].cwd.to_string_lossy();
     let env: Vec<String> = layout.env.iter().map(|(k, v)| format!("{k}={v}")).collect();
@@ -212,6 +275,12 @@ mod tests {
     fn session_name_avoids_tmux_separators() {
         assert_eq!(session_name("hubi", "HB-1"), "hubi/HB-1");
         assert_eq!(session_name("hubi", "v1.2:fix"), "hubi/v1_2_fix");
+    }
+
+    #[test]
+    fn quote_keeps_values_literal_for_tmux() {
+        assert_eq!(quote("/a b/f0"), r#""/a b/f0""#);
+        assert_eq!(quote(r#"it's "x" $HOME \n"#), r#""it's \"x\" \$HOME \\n""#);
     }
 
     #[test]
