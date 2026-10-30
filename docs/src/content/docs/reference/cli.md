@@ -24,12 +24,12 @@ f0 init [--name <name>] [--template]
 | `--name` | Default answer for the project name. Otherwise the repository folder name |
 | `--template` | Write a file with `<...>` placeholders instead of asking |
 
-It asks for the project name, base branch (default: where `origin/HEAD` points, or the current branch in a repo without a remote), branch prefix, [AI agent](/reference/configuration/#ai-agent), env files and dev servers. Press Enter to take the value in brackets.
+It asks for the project name, base branch (default: where `origin/HEAD` points, or the current branch in a repo without a remote), branch prefixes, [AI agent](/reference/configuration/#ai-agent), env files and dev servers. Press Enter to take the value in brackets.
 
 ```
 Project name [react-native-bottom-sheet]: bottom-sheet
 Base branch [main]:
-Branch prefix [feature/]:
+Branch prefixes, comma separated, the first is the default [feature/, fix/, refactor/, chore/]:
 AI agent command (claude, codex, gemini, opencode...) [claude]:
 Other files to copy, comma separated (empty for none):
 Add a dev server? [y/N]: y
@@ -60,7 +60,7 @@ It asks the same questions as `f0 init`, with the current values as defaults, so
 
 ```
 Base branch [develop]:
-Branch prefix [feature/]:
+Branch prefixes, comma separated, the first is the default [feature/, fix/, refactor/, chore/]:
 AI agent command (claude, codex, gemini, opencode...) [claude]:
 Env files: using the repo's .worktreeinclude
 Server api: pnpm nx serve @org/api
@@ -81,14 +81,15 @@ If nothing changed it says so and leaves the file alone. Otherwise it shows a `g
 Lease a treehouse slot with a new branch and open its workspace.
 
 ```bash
-f0 new <ticket> [--project <name>] [--base <branch>] [--start <servers>] [--agent <command>] [--no-attach]
+f0 new <ticket> [--project <name>] [--base <branch>] [--type <type>] [--start <servers>] [--agent <command>] [--no-attach]
 ```
 
 | Argument | Meaning |
 |---|---|
-| `<ticket>` | Task id, appended to the project's `branch_prefix` (`APP-123` becomes `feature/APP-123`) |
+| `<ticket>` | Task id, appended to the first of the project's `branch_prefixes` (`APP-123` becomes `feature/APP-123`) |
 | `-p`, `--project` | Project name. Defaults to the project whose `repo` contains the current directory |
 | `--base` | Branch to cut from, overriding `base` in the project |
+| `-t`, `--type` | Branch type: one of the project's `branch_prefixes`, with or without the `/` (`--type fix` creates `fix/APP-123`). The session is still `my-app/APP-123` |
 | `--start` | Servers to start right away, comma separated (`--start api,web`). The others wait for Enter, unless they have `autostart = true` |
 | `--agent` | AI agent for this task only, like `codex` or `opencode`, overriding the project's |
 | `--no-attach` | Create the session without attaching, and print its name |
@@ -136,7 +137,7 @@ Free slots: my-app 2 (`f0 ls --all` lists them)
 | `--all` | Also list free slots |
 | `--paths` | Add a column with the folder of each slot |
 
-treehouse numbers slots per repository, so the same number shows up in several projects. The **ID** column, `<project>/<slot>`, is unique, and `f0 open` and `f0 done` accept it. **TASK** is the branch without the project's `branch_prefix`.
+treehouse numbers slots per repository, so the same number shows up in several projects. The **ID** column, `<project>/<slot>`, is unique, and `f0 open` and `f0 done` accept it. **TASK** is the branch without whichever of the project's `branch_prefixes` it starts with.
 
 ## f0 switch
 

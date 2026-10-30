@@ -49,7 +49,7 @@ Every task gets its own worktree, so each repository needs two things: a project
    f0 new APP-123
    ```
 
-   f0 creates `feature/APP-123` from `develop` in a fresh slot and opens a tmux session called `my-app/APP-123` with the editor and the agent running. Each server pane has its command typed and waiting: press Enter in the ones you need, or start them with the task using `f0 new APP-123 --start api`.
+   f0 creates `feature/APP-123` from `develop` in a fresh slot and opens a tmux session called `my-app/APP-123` with the editor and the agent running. Each server pane has its command typed and waiting: press Enter in the ones you need, or start them with the task using `f0 new APP-123 --start api`. For a bug fix or a chore, `f0 new APP-123 --type fix` creates `fix/APP-123` instead.
 
 4. Work. Detach with `Ctrl-a d` whenever you want; everything keeps running. Come back with `f0 switch` or `f0 open APP-123`.
 

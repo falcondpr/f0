@@ -26,6 +26,15 @@ f0 ejecuta `treehouse get --lease --base <base> --branch feature/APP-123`, abre 
 
 La rama siempre sale de la `base` del proyecto. Usa `--base` para cambiarla en una tarea puntual.
 
+El tipo de rama es el primero de los `branch_prefixes` del proyecto, `feature/` por defecto. Elige otro para una tarea con `--type`:
+
+```bash
+f0 new APP-124 --type fix       # fix/APP-124
+f0 new APP-125 -t chore         # chore/APP-125
+```
+
+La sesión sigue siendo `my-app/APP-124`. Los proyectos creados antes de que existiera `branch_prefixes` solo tienen `feature/`; agrega los demás con `f0 edit`.
+
 ## 2. Archivos de entorno
 
 treehouse copia los archivos listados en `.worktreeinclude` desde el checkout principal al slot cuando lo reserva. Mira [Worktrees](/es/guides/worktrees/).

@@ -2,7 +2,7 @@
 
 repo = "~/dev/my-app"          # main checkout; treehouse pools its worktrees
 base = "develop"               # optional, defaults to what treehouse infers
-branch_prefix = "feature/"     # `f0 new APP-1` creates feature/APP-1
+branch_prefixes = ["feature/", "fix/", "refactor/", "chore/"]  # `f0 new APP-1` creates feature/APP-1, `--type fix` fix/APP-1
 # include_file = "~/.config/f0/my-app.worktreeinclude"  # instead of the repo's .worktreeinclude; one of them must exist
 
 # Servers wait for Enter in their pane; `f0 new APP-1 --start api` or `autostart` starts them.
