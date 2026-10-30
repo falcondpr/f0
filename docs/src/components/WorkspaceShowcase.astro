@@ -4,22 +4,26 @@ import workspace from '../assets/workspace.png';
 
 const copy = {
 	en: {
-		alt: 'An f0 workspace for task F0-123 of an Expo app: Neovim with the changed files and the explorer, Claude Code on the right, and the Expo server plus three shells in the bottom row.',
+		alt: 'An f0 workspace for task F0-123 of an Expo app: Neovim with the changed files, app-tabs.tsx open and the explorer, Claude Code summarizing its work on the right, and the Expo server plus three shells in the bottom row.',
 		tour: 'Workspace areas',
 		intro: 'Every task opens in this layout. Pick an area to see what it does.',
 		regions: {
-			editor: ['Editor', 'Neovim in the worktree: changed files on the left, the file or a side-by-side diff in the middle, the explorer on the right.'],
+			changes: ['Changes', 'The files changed in this task, with their git status. Open one to review its diff.'],
+			file: ['File', 'The file you are working on, or a side-by-side diff that scrolls together, also sideways.'],
+			explorer: ['Explorer', 'Every file in the worktree, to browse the project and open any file.'],
 			agent: ['Agent', 'Your AI agent, already inside the task. Claude Code here, or Codex or any other CLI you set in the config.'],
 			servers: ['Servers', 'Dev servers from the project config. Each one waits for Enter, unless you start it with --start or autostart.'],
 			shells: ['Terminals', 'Shells in the same worktree, for git, tests or anything else.'],
 		},
 	},
 	es: {
-		alt: 'Un espacio de trabajo de f0 para la tarea F0-123 de una app de Expo: Neovim con los archivos modificados y el explorador, Claude Code a la derecha, y el servidor de Expo más tres shells en la fila de abajo.',
+		alt: 'Un espacio de trabajo de f0 para la tarea F0-123 de una app de Expo: Neovim con los archivos modificados, app-tabs.tsx abierto y el explorador, Claude Code resumiendo su trabajo a la derecha, y el servidor de Expo más tres shells en la fila de abajo.',
 		tour: 'Áreas del espacio de trabajo',
 		intro: 'Cada tarea se abre con este layout. Elegí un área para ver qué hace.',
 		regions: {
-			editor: ['Editor', 'Neovim en el worktree: archivos modificados a la izquierda, el archivo o un diff lado a lado en el medio, el explorador a la derecha.'],
+			changes: ['Cambios', 'Los archivos modificados en esta tarea, con su estado en git. Abrí uno para revisar su diff.'],
+			file: ['Archivo', 'El archivo en el que estás trabajando, o un diff lado a lado que se desplaza en conjunto, también hacia los costados.'],
+			explorer: ['Explorador', 'Todos los archivos del worktree, para recorrer el proyecto y abrir cualquiera.'],
 			agent: ['Agente', 'Tu agente de IA, ya dentro de la tarea. Acá Claude Code, o Codex o cualquier otra CLI que configures.'],
 			servers: ['Servidores', 'Los servidores del proyecto. Cada uno espera un Enter, salvo que lo arranques con --start o autostart.'],
 			shells: ['Terminales', 'Shells en el mismo worktree, para git, tests o lo que necesites.'],
@@ -192,8 +196,16 @@ const regions = Object.entries(t.regions) as [string, [string, string]][];
 		outline-offset: -2px;
 	}
 
-	.region[data-region='editor'] {
-		inset: 0.4% 35.4% 28.4% 0.4%;
+	.region[data-region='changes'] {
+		inset: 0.4% 82.6% 29% 0.4%;
+	}
+
+	.region[data-region='file'] {
+		inset: 0.4% 54.5% 29% 17.5%;
+	}
+
+	.region[data-region='explorer'] {
+		inset: 0.4% 35.5% 29% 45.6%;
 	}
 
 	.region[data-region='agent'] {
@@ -209,7 +221,9 @@ const regions = Object.entries(t.regions) as [string, [string, string]][];
 	}
 
 	/* A huge spread shadow dims everything around the active pane; .screen clips it. */
-	f0-showcase[data-active='editor'] .region[data-region='editor'],
+	f0-showcase[data-active='changes'] .region[data-region='changes'],
+	f0-showcase[data-active='file'] .region[data-region='file'],
+	f0-showcase[data-active='explorer'] .region[data-region='explorer'],
 	f0-showcase[data-active='agent'] .region[data-region='agent'],
 	f0-showcase[data-active='servers'] .region[data-region='servers'],
 	f0-showcase[data-active='shells'] .region[data-region='shells'] {
