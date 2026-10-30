@@ -71,7 +71,7 @@ pub fn ask_agent<R: BufRead, W: Write>(
             writeln!(out, "  The agent command is required, like `claude`")?;
             continue;
         }
-        let program = Agent { cmd: cmd.clone() };
+        let program = Agent::new(cmd.clone());
         if !process::is_installed(program.program()) {
             writeln!(
                 out,

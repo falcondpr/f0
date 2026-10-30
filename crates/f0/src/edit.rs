@@ -53,10 +53,7 @@ pub fn run(name: Option<&str>) -> anyhow::Result<()> {
         &defaults.agent.cmd,
     )?;
 
-    // Keep `[agent]` out of the file while it matches the global default.
-    let agent = (file.agent.is_some() || answers.agent != defaults.agent.cmd).then(|| Agent {
-        cmd: answers.agent.clone(),
-    });
+    let agent = agent_entry(file.agent.as_ref(), &answers.agent, &defaults.agent.cmd);
 
     // Compare values, not text: a hand-written file renders differently even when every
     // answer kept its current value.
@@ -290,6 +287,19 @@ fn ask<R: BufRead, W: Write>(
     })
 }
 
+/// The `[agent]` table to write: none while the answer matches the global default.
+fn agent_entry(current: Option<&Agent>, answer: &str, default: &str) -> Option<Agent> {
+    if current.is_none() && answer == default {
+        return None;
+    }
+    let mut agent = Agent::new(answer);
+    // A resume command belongs to the agent it was written for.
+    agent.resume = current
+        .filter(|current| current.cmd == answer)
+        .and_then(|current| current.resume.clone());
+    Some(agent)
+}
+
 fn describe(server: &Server) -> String {
     let mut text = format!("{}: {}", server.name, server.cmd);
     if let Some(cwd) = &server.cwd {
@@ -425,5 +435,26 @@ mod tests {
         assert_eq!(answers.servers[0].cwd, Some(PathBuf::from("apps/web")));
         assert!(out.contains("Base branch [main]"), "{out}");
         assert!(out.contains("Answer edit, remove"), "{out}");
+    }
+
+    #[test]
+    fn agent_entry_keeps_resume_only_for_the_same_agent() {
+        let current = Agent {
+            cmd: "codex".to_owned(),
+            resume: Some("codex resume --last".to_owned()),
+        };
+        assert_eq!(agent_entry(None, "claude", "claude"), None);
+        assert_eq!(
+            agent_entry(Some(&current), "codex", "claude"),
+            Some(current.clone())
+        );
+        assert_eq!(
+            agent_entry(Some(&current), "gemini", "claude"),
+            Some(Agent::new("gemini"))
+        );
+        assert_eq!(
+            agent_entry(None, "codex", "claude"),
+            Some(Agent::new("codex"))
+        );
     }
 }

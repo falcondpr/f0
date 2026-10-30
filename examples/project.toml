@@ -18,6 +18,7 @@ cmd = "npx expo start -c"
 
 [agent]
 cmd = "claude"
+# resume = "claude --continue"   # f0 open picks up the last conversation; the default for claude
 
 [editor]
 cmd = "nvim ."

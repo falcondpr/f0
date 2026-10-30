@@ -93,9 +93,7 @@ pub fn run(name: Option<&str>, template: bool) -> anyhow::Result<()> {
             servers: answers.servers.clone(),
             terminals: terminals_for(answers.servers.len(), defaults.layout.terminals),
             // The global default needs no copy in the project.
-            agent: (answers.agent != defaults.agent.cmd).then(|| Agent {
-                cmd: answers.agent.clone(),
-            }),
+            agent: (answers.agent != defaults.agent.cmd).then(|| Agent::new(answers.agent.clone())),
             editor: None,
             layout: None,
         },

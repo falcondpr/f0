@@ -71,21 +71,38 @@ pub struct Server {
 #[serde(deny_unknown_fields)]
 pub struct Agent {
     pub cmd: String,
+    /// Picks up the agent's last conversation in the worktree when `f0 open` rebuilds a
+    /// session.
+    #[serde(default)]
+    pub resume: Option<String>,
 }
 
 impl Agent {
+    pub fn new(cmd: impl Into<String>) -> Self {
+        Self {
+            cmd: cmd.into(),
+            resume: None,
+        }
+    }
+
     /// The program the pane runs, without arguments or path: `claude`, `codex`.
     pub fn program(&self) -> &str {
         let program = self.cmd.split_whitespace().next().unwrap_or_default();
         program.rsplit('/').next().unwrap_or(program)
     }
+
+    /// `resume`, or `--continue` for Claude Code, which keeps conversations per folder:
+    /// every task has its own worktree, so it always finds that task's conversation.
+    pub fn resume_cmd(&self) -> Option<String> {
+        self.resume
+            .clone()
+            .or_else(|| (self.program() == "claude").then(|| format!("{} --continue", self.cmd)))
+    }
 }
 
 impl Default for Agent {
     fn default() -> Self {
-        Self {
-            cmd: "claude".to_owned(),
-        }
+        Self::new("claude")
     }
 }
 
@@ -364,6 +381,9 @@ impl ProjectDraft {
         }
         if let Some(agent) = &self.agent {
             out.push_str(&format!("\n[agent]\ncmd = {}\n", toml_string(&agent.cmd)));
+            if let Some(resume) = &agent.resume {
+                out.push_str(&format!("resume = {}\n", toml_string(resume)));
+            }
         }
         match (&self.layout, self.terminals) {
             (Some(layout), terminals) => out.push_str(&format!(
@@ -730,6 +750,7 @@ mod tests {
             terminals: Some(6),
             agent: Some(Agent {
                 cmd: "codex".to_owned(),
+                resume: Some("codex resume --last".to_owned()),
             }),
             editor: None,
             layout: Some(LayoutConfig {
@@ -748,7 +769,7 @@ mod tests {
         assert_eq!(project.servers, draft.servers);
         assert_eq!(project.layout.terminals, 6);
         assert_eq!(project.layout.terminal_height, 30);
-        assert_eq!(project.agent.cmd, "codex");
+        assert_eq!(project.agent, draft.agent.clone().unwrap());
         assert_eq!(project.editor.cmd, "nvim .");
     }
 
@@ -771,12 +792,26 @@ mod tests {
 
     #[test]
     fn agent_program_drops_arguments_and_path() {
-        let agent = |cmd: &str| Agent {
-            cmd: cmd.to_owned(),
-        };
-        assert_eq!(agent("claude").program(), "claude");
-        assert_eq!(agent("codex --full-auto").program(), "codex");
-        assert_eq!(agent("/opt/bin/opencode run").program(), "opencode");
+        assert_eq!(Agent::new("claude").program(), "claude");
+        assert_eq!(Agent::new("codex --full-auto").program(), "codex");
+        assert_eq!(Agent::new("/opt/bin/opencode run").program(), "opencode");
+    }
+
+    #[test]
+    fn claude_resumes_by_default_and_other_agents_only_when_set() {
+        assert_eq!(
+            Agent::new("claude --model opus").resume_cmd().as_deref(),
+            Some("claude --model opus --continue")
+        );
+        assert_eq!(Agent::new("codex").resume_cmd(), None);
+
+        let project =
+            parse("repo = \"/x\"\n[agent]\ncmd = \"codex\"\nresume = \"codex resume --last\"")
+                .unwrap();
+        assert_eq!(
+            project.agent.resume_cmd().as_deref(),
+            Some("codex resume --last")
+        );
     }
 
     #[test]

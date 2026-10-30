@@ -53,7 +53,16 @@ const FIRST_TERMINAL: usize = 1;
 const AGENT: usize = 2;
 
 /// `start` names servers to run right away on top of the ones marked `autostart`.
-pub fn build(project: &Project, worktree: &Path, start: &[String]) -> Layout {
+/// `resume` starts the agent with its resume command, when it has one, falling back to
+/// a fresh start.
+pub fn build(project: &Project, worktree: &Path, start: &[String], resume: bool) -> Layout {
+    let agent = match project.agent.resume_cmd().filter(|_| resume) {
+        // Resume commands fail when there is nothing to resume, like `claude --continue`
+        // in a worktree without conversations; the agent then starts fresh.
+        Some(resume) => format!("{resume} || {}", project.agent.cmd),
+        None => project.agent.cmd.clone(),
+    };
+
     let terminals = usize::from(project.layout.terminals);
 
     let mut panes = vec![
@@ -67,7 +76,7 @@ pub fn build(project: &Project, worktree: &Path, start: &[String]) -> Layout {
         Pane {
             title: format!("agent: {}", project.agent.program()),
             cwd: worktree.to_owned(),
-            command: Some(project.agent.cmd.clone()),
+            command: Some(agent),
             run: true,
         },
     ];
@@ -170,7 +179,7 @@ mod tests {
             "#,
         );
         let worktree = Path::new("/pool/1/hubi");
-        let layout = build(&project, worktree, &[]);
+        let layout = build(&project, worktree, &[], false);
 
         let titles: Vec<_> = layout.panes.iter().map(|p| p.title.as_str()).collect();
         assert_eq!(
@@ -214,7 +223,7 @@ mod tests {
             cmd = "c"
             "#,
         );
-        let layout = build(&project, Path::new("/w"), &["mobile".to_owned()]);
+        let layout = build(&project, Path::new("/w"), &["mobile".to_owned()], false);
         let runs: Vec<_> = layout
             .panes
             .iter()
@@ -234,9 +243,28 @@ mod tests {
     }
 
     #[test]
+    fn resume_starts_the_agent_where_it_left_off() {
+        let project = project(r#"repo = "/src/hubi""#);
+        let agent = |resume| build(&project, Path::new("/w"), &[], resume).panes[AGENT].clone();
+        assert_eq!(agent(false).command.as_deref(), Some("claude"));
+        assert_eq!(
+            agent(true).command.as_deref(),
+            Some("claude --continue || claude")
+        );
+        assert_eq!(agent(true).title, "agent: claude");
+
+        let codex = Project {
+            agent: crate::config::Agent::new("codex"),
+            ..project.clone()
+        };
+        let pane = build(&codex, Path::new("/w"), &[], true).panes[AGENT].clone();
+        assert_eq!(pane.command.as_deref(), Some("codex"));
+    }
+
+    #[test]
     fn terminal_splits_share_the_row_evenly() {
         let project = project(r#"repo = "/src/hubi""#);
-        let layout = build(&project, Path::new("/w"), &[]);
+        let layout = build(&project, Path::new("/w"), &[], false);
 
         let row: Vec<_> = layout.splits[2..]
             .iter()
@@ -250,7 +278,7 @@ mod tests {
     #[test]
     fn single_terminal_has_no_row_splits() {
         let project = project("repo = \"/x\"\n[layout]\nterminals = 1");
-        let layout = build(&project, Path::new("/w"), &[]);
+        let layout = build(&project, Path::new("/w"), &[], false);
         assert_eq!(layout.panes.len(), 3);
         assert_eq!(layout.splits.len(), 2);
     }

@@ -25,7 +25,7 @@ pub fn new(
         project.base = base;
     }
     if let Some(cmd) = agent {
-        project.agent = Agent { cmd };
+        project.agent = Agent::new(cmd);
     }
     project.ensure_filled()?;
     project.check_start(start)?;
@@ -48,7 +48,14 @@ pub fn new(
     let branch = project.branch_for(ticket);
     eprintln!("Leasing a {} slot for {branch}...", project.name);
     let worktree = treehouse::lease(&project, &branch, &format!("f0:{name}"))?;
-    start_session(&project, &name, &canonical(&worktree)?, start, attach)
+    start_session(
+        &project,
+        &name,
+        &canonical(&worktree)?,
+        start,
+        false,
+        attach,
+    )
 }
 
 /// Reopens the workspace of a leased slot, for example after tmux restarted. Attaches to
@@ -79,7 +86,7 @@ pub fn open(
     let mut project =
         config::find_by_repo(&projects, &git::main_repo_root(&root)?, &config_dir)?.clone();
     if let Some(cmd) = agent {
-        project.agent = Agent { cmd };
+        project.agent = Agent::new(cmd);
     }
     project.ensure_filled()?;
     project.check_start(start)?;
@@ -96,7 +103,7 @@ pub fn open(
     if tmux::has_session(&name) {
         return Err(F0Error::SessionExists { name }.into());
     }
-    start_session(&project, &name, &root, start, attach)
+    start_session(&project, &name, &root, start, true, attach)
 }
 
 /// Slots in use, one row each, named `<project>/<slot>`: treehouse numbers slots per
@@ -351,9 +358,10 @@ fn start_session(
     name: &str,
     worktree: &Path,
     start: &[String],
+    resume: bool,
     attach: bool,
 ) -> anyhow::Result<()> {
-    let layout = layout::build(project, worktree, start);
+    let layout = layout::build(project, worktree, start, resume);
     if let Err(e) = tmux::create_session(name, worktree, &layout) {
         // A half-built session would block the next attempt with SessionExists.
         if tmux::has_session(name) {
