@@ -39,7 +39,7 @@ f0 new APP-124 --start api,web  # same, starting those servers; the rest wait fo
 f0 new APP-125 --agent codex    # any AI CLI as the agent: claude, codex, gemini, opencode...
 f0 ls                           # slots and sessions of every project
 f0 switch                       # jump to another task
-f0 open APP-123                 # rebuild a task's session, e.g. after a restart
+f0 open APP-123                 # rebuild a task's session, e.g. after a restart, resuming the agent
 f0 done APP-123                 # from outside the session: close it and return the slot
 f0 done my-app/4                # same, by the slot id that `f0 ls` shows
 ```

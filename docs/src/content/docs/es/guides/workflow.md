@@ -73,4 +73,4 @@ También sirven el nombre de la sesión (`my-app/APP-123`) o la ruta del slot.
 
 f0 cierra la sesión y ejecuta `treehouse return`, que detiene los procesos que queden y devuelve el slot al pool. treehouse pregunta antes de descartar cambios sin commitear.
 
-Para retomar una tarea más tarde, `f0 open APP-123` se reconecta, o rearma la sesión si estaba cerrada.
+Para retomar una tarea más tarde, `f0 open APP-123` se reconecta, o rearma la sesión si estaba cerrada. La sesión rearmada conserva el worktree con sus cambios sin commitear, y el agente retoma la última conversación de la tarea.
