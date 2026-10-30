@@ -71,7 +71,7 @@ gh pr create --base develop --fill
 
 ## 7. Terminar
 
-Desde una terminal que no esté dentro de la sesión de la tarea:
+Aprieta `Ctrl-a X` dentro de la sesión de la tarea, o escribe `f0 done` en cualquiera de sus paneles. Desde otra terminal, nombra la tarea:
 
 ```bash
 f0 done APP-123   # por tarea

@@ -39,6 +39,6 @@ include_file = "~/.config/f0/my-app.worktreeinclude"
 
 f0 passes it as `treehouse get --include-file`.
 
-## Why `done` refuses to run inside its own session
+## Running `done` inside its own session
 
-Returning a slot stops every process inside it, including the shell that would be running `f0 done`. Run it from another terminal or another session.
+Returning a slot stops every process inside it, including the shell that would be running `f0 done`. So inside the task's session, `f0 done` (or `Ctrl-a X`) asks in the tmux status line and leaves the work to a tmux background job, which no pane owns. That job cannot answer treehouse's question about uncommitted changes, so f0 asks first and tells you how many would be discarded.

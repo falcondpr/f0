@@ -148,7 +148,7 @@ Muestra una lista numerada de sesiones de f0 y cambia a la que elijas. Dentro de
 Cierra la sesión de un slot y devuelve el slot al pool.
 
 ```bash
-f0 done [slot]
+f0 done [slot] [--force]
 ```
 
 Nombra el slot de cualquiera de las formas que muestra `f0 ls`:
@@ -160,7 +160,9 @@ f0 done my-app/APP-123                       # la columna SESSION
 f0 done ~/.treehouse/my-app-3f9a2c/4/my-app  # la ruta, de `f0 ls --paths`
 ```
 
-Sin `[slot]` usa la carpeta actual. Primero cierra la sesión y después `treehouse return` limpia el slot, y pregunta antes de descartar cambios sin commitear. Rechaza carpetas que no son un slot y no se ejecuta desde dentro de la sesión que cerraría.
+Sin `[slot]` usa la carpeta actual. Primero cierra la sesión y después `treehouse return` limpia el slot, y pregunta antes de descartar cambios sin commitear; con `--force` los descarta sin preguntar. Rechaza carpetas que no son un slot.
+
+Dentro de la sesión que cerraría, cerrar la sesión detendría al propio `f0 done` a mitad de camino, así que pregunta en la barra de estado de tmux (`Close my-app/APP-123 and return its slot? (y/n)`, con la cantidad de cambios sin commitear que descartaría, si hay) y tmux cierra la sesión y devuelve el slot en segundo plano. `Ctrl-a X` hace lo mismo desde cualquier panel. Si la devolución en segundo plano falla, tmux muestra un mensaje y el slot sigue en `f0 ls`; ejecuta `f0 done <id>` desde una terminal para ver por qué.
 
 ## f0 doctor
 

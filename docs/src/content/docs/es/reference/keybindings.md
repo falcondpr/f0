@@ -17,6 +17,7 @@ El prefijo es `Ctrl-a`.
 | `Ctrl-a z` | Ampliar el panel actual (alterna) |
 | `Ctrl-a s` | Elegir una sesión |
 | `Ctrl-a d` | Desconectarse; todo sigue corriendo |
+| `Ctrl-a X` | Cierra la tarea de f0 de esta sesión y devuelve su slot, después de preguntar (`f0 done`) |
 | `Ctrl-a \|` / `Ctrl-a -` | Dividir a la derecha / abajo |
 | `Ctrl-a c` | Ventana nueva |
 | `Ctrl-a [` | Desplazarse hacia atrás (`v` selecciona, `y` copia al portapapeles) |
@@ -73,3 +74,5 @@ El mouse está activado: clic para enfocar, arrastra los bordes para redimension
 ## Con tus propias configuraciones
 
 `Ctrl-h/j/k/l` entre paneles necesita las dos mitades de [vim-tmux-navigator](https://github.com/christoomey/vim-tmux-navigator): su fragmento en tu configuración de tmux y el plugin en Neovim. Sin ellas, muévete entre paneles con tu prefijo de tmux y las flechas. Los títulos de los paneles solo aparecen si tu configuración de tmux define `pane-border-status`.
+
+Para `Ctrl-a X`, copia su bloque `bind X` de `config/tmux/tmux.conf`. Escribir `f0 done` en cualquier panel de la sesión funciona sin él.

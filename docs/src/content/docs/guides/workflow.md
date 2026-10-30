@@ -71,7 +71,7 @@ gh pr create --base develop --fill
 
 ## 7. Finish
 
-From a terminal that is not inside the task session:
+Press `Ctrl-a X` inside the task session, or type `f0 done` in any of its panes. From another terminal, name the task:
 
 ```bash
 f0 done APP-123   # by task
