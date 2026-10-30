@@ -57,6 +57,18 @@ The agent pane runs whatever command you give it, so any AI coding CLI that work
 
 Arguments are fine (`cmd = "codex --full-auto"`). `f0 new` and `f0 open` refuse to start when the agent's program is not installed, and `f0 doctor` checks every project's agent.
 
+### Resuming the conversation
+
+When `f0 open` rebuilds a closed session, for example after a restart, the agent picks up the task's last conversation. Every task has its own worktree, so it always resumes that task's conversation, not another one. Claude Code does it out of the box with `claude --continue`. For other agents, set the command that resumes, wherever you set `cmd`:
+
+```toml
+[agent]
+cmd = "codex"
+resume = "codex resume --last"
+```
+
+If the resume command fails, as when there is no conversation yet, the agent starts fresh. `f0 new` always starts a new conversation.
+
 ## Projects
 
 `projects/<name>.toml`. The file name is the project name and the first part of every session name. f0 works only in repositories that have a project.

@@ -110,6 +110,8 @@ f0 open [slot] [--start <servers>] [--agent <command>] [--no-attach]
 | `--agent` | AI agent for the rebuilt session, as in `f0 new` |
 | `--no-attach` | Create the session without attaching |
 
+A rebuilt session resumes the agent's last conversation in the task. See [Resuming the conversation](/reference/configuration/#resuming-the-conversation).
+
 Use it to get a task back after its session was closed, for example when tmux or the computer restarted. The slot must belong to a configured project; any other folder is refused.
 
 An existing folder always wins over a name. A bare slot number (`4`) also works, but it repeats across projects: then the project of the current directory is used, and outside any project f0 lists the ids to pick from.

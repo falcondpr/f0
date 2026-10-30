@@ -57,6 +57,18 @@ El panel del agente ejecuta el comando que le des, así que cualquier CLI de IA 
 
 Se pueden pasar argumentos (`cmd = "codex --full-auto"`). `f0 new` y `f0 open` no arrancan si el programa del agente no está instalado, y `f0 doctor` revisa el agente de cada proyecto.
 
+### Retomar la conversación
+
+Cuando `f0 open` rearma una sesión cerrada, por ejemplo después de reiniciar, el agente retoma la última conversación de la tarea. Cada tarea tiene su propio worktree, así que siempre retoma la conversación de esa tarea y no otra. Claude Code lo hace sin configurar nada, con `claude --continue`. Para otros agentes, configura el comando que retoma, en el mismo lugar que `cmd`:
+
+```toml
+[agent]
+cmd = "codex"
+resume = "codex resume --last"
+```
+
+Si el comando para retomar falla, como cuando todavía no hay conversación, el agente arranca de cero. `f0 new` siempre arranca una conversación nueva.
+
 ## Proyectos
 
 `projects/<nombre>.toml`. El nombre del archivo es el nombre del proyecto y la primera parte de cada nombre de sesión. f0 solo funciona en repositorios que tienen un proyecto.

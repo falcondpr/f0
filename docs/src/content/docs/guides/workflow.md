@@ -73,4 +73,4 @@ The session name (`my-app/APP-123`) or the slot path work too.
 
 f0 closes the session and runs `treehouse return`, which stops leftover processes and gives the slot back to the pool. treehouse asks before discarding uncommitted changes.
 
-To come back to a task later, `f0 open APP-123` reattaches, or rebuilds the session if it was closed.
+To come back to a task later, `f0 open APP-123` reattaches, or rebuilds the session if it was closed. A rebuilt session keeps the worktree with its uncommitted changes, and the agent resumes the task's last conversation.

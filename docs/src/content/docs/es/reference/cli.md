@@ -110,6 +110,8 @@ f0 open [slot] [--start <servidores>] [--agent <comando>] [--no-attach]
 | `--agent` | Agente de IA para la sesión rearmada, como en `f0 new` |
 | `--no-attach` | Crea la sesión sin conectarse |
 
+Una sesión rearmada retoma la última conversación del agente en la tarea. Mira [Retomar la conversación](/es/reference/configuration/#retomar-la-conversación).
+
 Sirve para recuperar una tarea cuando su sesión se cerró, por ejemplo si se reinició tmux o la computadora. El slot tiene que pertenecer a un proyecto configurado; cualquier otra carpeta se rechaza.
 
 Una carpeta que existe siempre gana sobre un nombre. El número de slot solo (`4`) también sirve, pero se repite entre proyectos: en ese caso se usa el proyecto de la carpeta actual, y fuera de cualquier proyecto f0 lista los ids para elegir.
