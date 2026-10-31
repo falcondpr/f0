@@ -71,7 +71,7 @@ gh pr create --base develop --fill
 
 ## 7. Terminar
 
-Aprieta `Ctrl-a X` dentro de la sesión de la tarea, o escribe `f0 done` en cualquiera de sus paneles. Desde otra terminal, nombra la tarea:
+Aprieta `Ctrl-a X` dentro de la sesión de la tarea (su barra de estado te lo recuerda) y elige **Close and return the slot**, o escribe `f0 done` en cualquiera de sus paneles. Desde otra terminal, nombra la tarea:
 
 ```bash
 f0 done APP-123   # por tarea
@@ -81,5 +81,7 @@ f0 done my-app/4  # o por el id del slot que muestra `f0 ls`
 También sirven el nombre de la sesión (`my-app/APP-123`) o la ruta del slot.
 
 f0 cierra la sesión y ejecuta `treehouse return`, que detiene los procesos que queden y devuelve el slot al pool. treehouse pregunta antes de descartar cambios sin commitear.
+
+Para pausar una tarea, elige **Close, keep the slot** en el mismo menú, o ejecuta `f0 stop`: la sesión se cierra y el slot sigue siendo tuyo.
 
 Para retomar una tarea más tarde, `f0 open APP-123` se reconecta, o rearma la sesión si estaba cerrada. La sesión rearmada conserva el worktree con sus cambios sin commitear, y el agente retoma la última conversación de la tarea.

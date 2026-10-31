@@ -96,6 +96,8 @@ f0 new <ticket> [--project <name>] [--base <branch>] [--type <type>] [--start <s
 
 Requires treehouse, a project file and its [worktree include file](/guides/worktrees/#worktreeinclude). Fails before leasing a slot if any is missing, and if a session with the same name exists.
 
+When the branch already exists, locally or on `origin`, as with a task returned before it was merged, the slot checks it out instead of creating it, and `--base` does nothing. It fails if another checkout has that branch: `f0 open` reopens it when it is a slot.
+
 ## f0 open
 
 Reopen the workspace of a treehouse slot, attaching to its session if it is running.
@@ -143,6 +145,16 @@ treehouse numbers slots per repository, so the same number shows up in several p
 
 Show a numbered list of f0 sessions and switch to the one you pick. Inside tmux it switches the current client; outside, it attaches.
 
+## f0 stop
+
+Close a slot's session and keep the slot, with its branch and uncommitted changes, to come back later.
+
+```bash
+f0 stop [slot]
+```
+
+Takes the slot like `f0 done`, and defaults to the current directory. The agent and the servers stop; `f0 ls` keeps listing the slot, and `f0 open APP-123` rebuilds its session. Typed inside the session it closes, the session closes right away.
+
 ## f0 done
 
 Close a slot's session and return the slot to the pool.
@@ -162,11 +174,21 @@ f0 done ~/.treehouse/my-app-3f9a2c/4/my-app  # the path, from `f0 ls --paths`
 
 Without `[slot]` it uses the current directory. The session is closed first, then `treehouse return` cleans the slot, asking before it discards uncommitted changes; `--force` discards them without asking. Refuses folders that are not a slot.
 
-Inside the session it would close, closing the session would stop `f0 done` itself halfway, so it asks in the tmux status line instead (`Close my-app/APP-123 and return its slot? (y/n)`, with the number of uncommitted changes it would discard, if any) and tmux closes the session and returns the slot in the background. `Ctrl-a X` does the same from any pane. If the background return fails, tmux shows a message and the slot stays in `f0 ls`; run `f0 done <id>` from a terminal to see why.
+Inside the session it would close, closing the session would stop `f0 done` itself halfway, so it asks in the tmux status line instead (`Close my-app/APP-123 and return its slot? (y/n)`, with the number of uncommitted changes it would discard, if any) and tmux closes the session and returns the slot in the background. `Ctrl-a X` offers it from any pane, next to closing the session and keeping the slot (`f0 stop`), and the status line of the session shows the key. If the background return fails, tmux shows a message and the slot stays in `f0 ls`; run `f0 done <id>` from a terminal to see why.
+
+## f0 keys
+
+Bind the key that closes a task on the running tmux server and show it in the status line of every f0 session.
+
+```bash
+f0 keys
+```
+
+`f0 new` and `f0 open` do it for their sessions, and `install.sh` runs it after an update, so sessions that were already open get the new binding without reloading tmux. The key comes from [`[keys] done`](/reference/configuration/#keys); after changing it, run `f0 keys` to unbind the old one.
 
 ## f0 doctor
 
-Check tools, global defaults and project configs. Exits with an error when something required is missing.
+Check tools, global defaults, project configs and the tmux keys. Exits with an error when something required is missing.
 
 | Check | Required |
 |---|---|
@@ -174,6 +196,7 @@ Check tools, global defaults and project configs. Exits with an error when somet
 | At least one project | Yes |
 | Editor and agent commands of the defaults and each project | Yes |
 | Each project's `repo` and worktree include file | Yes |
+| The running tmux server binds the key that closes a task (skipped with no server or with `[keys] done = false`) | Yes |
 | `gh`, `rg`, Ghostty | No |
 
 ## Environment variables
