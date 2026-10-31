@@ -97,4 +97,10 @@ mkdir -p "$CONFIG/f0/projects"
 info "building f0"
 cargo install --path "$ROOT/crates/f0" --locked --quiet
 
+# A tmux server that was already running gets the new key bindings without a reload.
+if tmux list-sessions >/dev/null 2>&1; then
+  info "binding f0 keys in the running tmux server"
+  "${CARGO_HOME:-$HOME/.cargo}/bin/f0" keys || true
+fi
+
 info "done, run \`f0 doctor\`"

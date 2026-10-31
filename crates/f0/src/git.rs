@@ -62,8 +62,67 @@ pub fn changed_files(path: &Path) -> Result<usize, F0Error> {
     Ok(status.lines().count())
 }
 
+/// Whether `branch` exists here, or only on `origin`, where `git switch` picks it up.
+pub fn branch_exists(repo: &Path, branch: &str) -> bool {
+    ["refs/heads", "refs/remotes/origin"].iter().any(|refs| {
+        process::output(
+            "git",
+            [
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                &format!("{refs}/{branch}"),
+            ],
+            Some(repo),
+        )
+        .is_ok()
+    })
+}
+
+/// The checkout of the repository that has `branch` checked out, if any.
+pub fn checkout_of(repo: &Path, branch: &str) -> Result<Option<PathBuf>, F0Error> {
+    let list = process::output("git", ["worktree", "list", "--porcelain"], Some(repo))?;
+    Ok(parse_checkout_of(&list, branch))
+}
+
+fn parse_checkout_of(list: &str, branch: &str) -> Option<PathBuf> {
+    let wanted = format!("branch refs/heads/{branch}");
+    list.split("\n\n").find_map(|entry| {
+        let mut lines = entry.lines();
+        let path = lines.next()?.strip_prefix("worktree ")?;
+        lines
+            .any(|line| line == wanted)
+            .then(|| PathBuf::from(path))
+    })
+}
+
+pub fn switch(path: &Path, branch: &str) -> Result<(), F0Error> {
+    process::output("git", ["switch", branch], Some(path)).map(drop)
+}
+
 /// Current branch, or `None` when HEAD is detached.
 pub fn current_branch(path: &Path) -> Result<Option<String>, F0Error> {
     let branch = process::output("git", ["branch", "--show-current"], Some(path))?;
     Ok((!branch.is_empty()).then_some(branch))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn finds_the_checkout_of_a_branch() {
+        let list = "worktree /src/app\nHEAD 1a\nbranch refs/heads/main\n\n\
+                    worktree /pool/1/app\nHEAD 2b\ndetached\n\n\
+                    worktree /pool/2/app\nHEAD 3c\nbranch refs/heads/feature/APP-1\n";
+        assert_eq!(
+            parse_checkout_of(list, "feature/APP-1"),
+            Some(PathBuf::from("/pool/2/app"))
+        );
+        assert_eq!(
+            parse_checkout_of(list, "main"),
+            Some(PathBuf::from("/src/app"))
+        );
+        assert_eq!(parse_checkout_of(list, "feature/APP"), None);
+    }
 }

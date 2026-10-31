@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use serde::de::Error as _;
 use serde::{Deserialize, Deserializer};
 
 use crate::error::F0Error;
@@ -65,6 +66,49 @@ impl ProjectFile {
 struct GlobalFile {
     #[serde(default)]
     defaults: Defaults,
+    #[serde(default)]
+    keys: Keys,
+}
+
+/// tmux keys f0 binds after the prefix. Key tables belong to the tmux server, so they
+/// are global, not per project.
+#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields, default)]
+pub struct Keys {
+    /// Closes the task of the session it is pressed in, like `f0 done`. `None` when
+    /// written as `false`.
+    #[serde(deserialize_with = "key_or_off")]
+    pub done: Option<String>,
+}
+
+impl Default for Keys {
+    fn default() -> Self {
+        Self {
+            done: Some("X".to_owned()),
+        }
+    }
+}
+
+/// A tmux key name, or `false` to leave the key alone.
+fn key_or_off<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<String>, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum KeyOrOff {
+        Key(String),
+        Off(bool),
+    }
+    match KeyOrOff::deserialize(deserializer)? {
+        KeyOrOff::Key(key) if key.is_empty() || key.contains(char::is_whitespace) => {
+            Err(D::Error::custom(format!(
+                "`{key}` is not a tmux key; write one like \"X\" or `false`"
+            )))
+        }
+        KeyOrOff::Key(key) => Ok(Some(key)),
+        KeyOrOff::Off(false) => Ok(None),
+        KeyOrOff::Off(true) => Err(D::Error::custom(
+            "write the key, like \"X\", or `false` to turn it off",
+        )),
+    }
 }
 
 /// What every workspace uses unless its project says otherwise.
@@ -551,22 +595,30 @@ pub fn home_dir() -> Result<PathBuf, F0Error> {
 }
 
 pub fn load_defaults(config_dir: &Path) -> Result<Defaults, F0Error> {
+    Ok(load_global(config_dir)?.defaults)
+}
+
+pub fn load_keys(config_dir: &Path) -> Result<Keys, F0Error> {
+    Ok(load_global(config_dir)?.keys)
+}
+
+fn load_global(config_dir: &Path) -> Result<GlobalFile, F0Error> {
     let path = config_dir.join("config.toml");
     let source = match fs::read_to_string(&path) {
         Ok(source) => source,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Defaults::default()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(GlobalFile::default()),
         Err(source) => return Err(F0Error::ReadConfig { path, source }),
     };
-    parse_defaults(&source, &path)
+    parse_global(&source, &path)
 }
 
-fn parse_defaults(source: &str, path: &Path) -> Result<Defaults, F0Error> {
+fn parse_global(source: &str, path: &Path) -> Result<GlobalFile, F0Error> {
     let file: GlobalFile = toml::from_str(source).map_err(|e| F0Error::ParseConfig {
         path: path.to_owned(),
         source: Box::new(e),
     })?;
     validate("defaults", &[], &file.defaults.layout)?;
-    Ok(file.defaults)
+    Ok(file)
 }
 
 pub fn load_projects(config_dir: &Path, defaults: &Defaults) -> Result<Vec<Project>, F0Error> {
@@ -804,11 +856,12 @@ mod tests {
 
     #[test]
     fn project_falls_back_to_global_defaults() {
-        let defaults = parse_defaults(
+        let defaults = parse_global(
             "[defaults.editor]\ncmd = \"hx .\"\n[defaults.layout]\nterminals = 2",
             Path::new("config.toml"),
         )
-        .unwrap();
+        .unwrap()
+        .defaults;
         let project = Project::from_toml(
             "hubi",
             "repo = \"/x\"\n[agent]\ncmd = \"codex\"",
@@ -826,9 +879,32 @@ mod tests {
     #[test]
     fn defaults_reject_project_keys_and_bad_layouts() {
         let path = Path::new("config.toml");
-        assert!(parse_defaults("[defaults]\nrepo = \"/x\"", path).is_err());
-        assert!(parse_defaults("[defaults.layout]\nterminals = 0", path).is_err());
-        assert_eq!(parse_defaults("", path).unwrap(), Defaults::default());
+        assert!(parse_global("[defaults]\nrepo = \"/x\"", path).is_err());
+        assert!(parse_global("[defaults.layout]\nterminals = 0", path).is_err());
+        assert_eq!(
+            parse_global("", path).unwrap().defaults,
+            Defaults::default()
+        );
+    }
+
+    #[test]
+    fn done_key_defaults_to_x_and_turns_off_with_false() {
+        let path = Path::new("config.toml");
+        let keys = |source: &str| parse_global(source, path).map(|file| file.keys.done);
+        assert_eq!(keys("").unwrap().as_deref(), Some("X"));
+        assert_eq!(
+            keys("[keys]\ndone = \"M-x\"").unwrap().as_deref(),
+            Some("M-x")
+        );
+        assert_eq!(keys("[keys]\ndone = false").unwrap(), None);
+        for bad in [
+            "done = true",
+            "done = \"\"",
+            "done = \"C-a X\"",
+            "close = \"X\"",
+        ] {
+            assert!(keys(&format!("[keys]\n{bad}")).is_err(), "{bad}");
+        }
     }
 
     #[test]

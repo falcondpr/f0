@@ -8,6 +8,9 @@ use crate::layout::{Direction, Layout};
 use crate::process;
 
 const PATH_OPTION: &str = "@f0_path";
+/// The key f0 last bound to close a task, kept on the tmux server so a changed or
+/// turned off `[keys] done` can unbind it.
+const DONE_KEY_OPTION: &str = "@f0_done_key";
 const DEFAULT_SIZE: (u16, u16) = (240, 60);
 
 #[derive(Debug, Clone, PartialEq)]
@@ -56,42 +59,104 @@ pub fn current_session() -> Option<String> {
 
 /// Asks in the status line of the client showing `session`, then runs `template` with
 /// `run-shell -b`, which reads `args` as `#{1}`, `#{2}`... The job belongs to the tmux
-/// server, so it outlives every pane of the session.
+/// server, so it outlives every pane of the session. `confirm-before` would take only a
+/// lowercase `y`, so the prompt reads one key and the job checks it.
 pub fn confirm_then_run(
     session: &str,
     prompt: &str,
     template: &str,
     args: &[&str],
 ) -> Result<(), F0Error> {
-    let client = tmux(&[
+    let client = client_of(session)?;
+    tmux(&[
+        "command-prompt",
+        "-1",
+        "-t",
+        &client,
+        "-p",
+        &prompt.replace('#', "##"),
+        &confirmed_job(template, args),
+    ])
+    .map(drop)
+}
+
+/// The job of `confirm_then_run`: tmux puts the key pressed in place of `%1`, the last
+/// argument, and anything but `y` or `Y` runs nothing.
+fn confirmed_job(template: &str, args: &[&str]) -> String {
+    let answer = args.len() + 1;
+    let guarded = format!("case #{{q:{answer}}} in y|Y) {template};; esac");
+    let mut args = args.to_vec();
+    args.push("%1");
+    run_shell(&guarded, &args)
+}
+
+/// One choice of `menu`: label, key, and the job it runs like `confirm_then_run`.
+pub struct MenuItem<'a> {
+    pub label: &'a str,
+    pub key: &'a str,
+    pub template: &'a str,
+    pub args: &'a [&'a str],
+}
+
+/// Shows a menu in the middle of the client showing `session`. It does not wait for
+/// the choice; Esc or `q` closes it without running anything.
+pub fn menu(session: &str, title: &str, items: &[MenuItem]) -> Result<(), F0Error> {
+    let client = client_of(session)?;
+    let title = format!("#[align=centre] {} ", title.replace('#', "##"));
+    let jobs: Vec<String> = items
+        .iter()
+        .map(|item| background_job(item.template, item.args))
+        .collect();
+    let mut command = vec![
+        "display-menu",
+        "-c",
+        &client,
+        "-T",
+        &title,
+        "-x",
+        "C",
+        "-y",
+        "C",
+    ];
+    for (item, job) in items.iter().zip(&jobs) {
+        command.extend([item.label, item.key, job.as_str()]);
+    }
+    tmux(&command).map(drop)
+}
+
+fn client_of(session: &str) -> Result<String, F0Error> {
+    let clients = tmux(&[
         "list-clients",
         "-t",
         &exact(session),
         "-F",
         "#{client_name}",
     ])?;
-    let Some(client) = client.lines().next() else {
-        return Err(F0Error::NoClient {
+    clients
+        .lines()
+        .next()
+        .map(str::to_owned)
+        .ok_or_else(|| F0Error::NoClient {
             session: session.to_owned(),
-        });
-    };
-    let command = std::iter::once("run-shell -b".to_owned())
+        })
+}
+
+/// `run-shell -b` of `template` with `args`, for `display-menu`, which expands formats
+/// in the command before running it. That would empty `#{1}` before `run-shell` sees
+/// its arguments, so every `#` is doubled.
+fn background_job(template: &str, args: &[&str]) -> String {
+    run_shell(template, args).replace('#', "##")
+}
+
+fn run_shell(template: &str, args: &[&str]) -> String {
+    std::iter::once("run-shell -b".to_owned())
         .chain(
             std::iter::once(template)
                 .chain(args.iter().copied())
                 .map(quote),
         )
         .collect::<Vec<_>>()
-        .join(" ");
-    tmux(&[
-        "confirm-before",
-        "-t",
-        client,
-        "-p",
-        &prompt.replace('#', "##"),
-        &command,
-    ])
-    .map(drop)
+        .join(" ")
 }
 
 /// Runs `template` with `run-shell -b` right away, like `confirm_then_run` once
@@ -102,8 +167,135 @@ pub fn run_in_background(template: &str, args: &[&str]) -> Result<(), F0Error> {
     tmux(&command).map(drop)
 }
 
-/// `value` as one argument of a tmux command string, such as the command
-/// `confirm-before` runs. Inside double quotes tmux expands `$VAR` and escapes.
+pub fn server_running() -> bool {
+    tmux(&["list-sessions"]).is_ok()
+}
+
+/// The key tmux waits for before a bound key, like `C-a`.
+pub fn prefix() -> Result<String, F0Error> {
+    tmux(&["show-options", "-gv", "prefix"])
+}
+
+/// Binds `key`, after the prefix, to `f0 done` for the session it is pressed in, and
+/// unbinds the key an earlier f0 bound when it is a different one. `None` only unbinds.
+/// It never replaces a key bound to something else.
+pub fn bind_done(key: Option<&str>, exe: &str) -> Result<(), F0Error> {
+    let previous = tmux(&["show-options", "-gqv", DONE_KEY_OPTION])?;
+    if !previous.is_empty()
+        && Some(previous.as_str()) != key
+        && prefix_binding(&previous)?.is_some_and(|binding| is_f0_binding(&binding))
+    {
+        tmux(&["unbind-key", "-T", "prefix", &previous])?;
+    }
+    let Some(key) = key else {
+        return tmux(&["set-option", "-gu", DONE_KEY_OPTION]).map(drop);
+    };
+    if let Some(binding) = prefix_binding(key)?
+        && !is_f0_binding(&binding)
+    {
+        return Err(F0Error::KeyTaken {
+            key: key.to_owned(),
+            binding,
+        });
+    }
+    let run = done_command(exe);
+    tmux(&[
+        "bind-key",
+        "-T",
+        "prefix",
+        key,
+        "if-shell",
+        "-F",
+        &format!("#{{{PATH_OPTION}}}"),
+        &run,
+        "display-message \"Not an f0 session\"",
+    ])
+    .map_err(|e| match e {
+        F0Error::CommandFailed { stderr, .. } if stderr.starts_with("unknown key") => {
+            F0Error::InvalidKey {
+                key: key.to_owned(),
+            }
+        }
+        e => e,
+    })?;
+    tmux(&["set-option", "-g", DONE_KEY_OPTION, key]).map(drop)
+}
+
+/// What `key` does after the prefix, as `list-keys` prints it; `None` when unbound.
+pub fn prefix_binding(key: &str) -> Result<Option<String>, F0Error> {
+    match tmux(&["list-keys", "-T", "prefix", key]) {
+        Ok(binding) => Ok(Some(binding)),
+        Err(F0Error::CommandFailed { stderr, .. })
+            if stderr.starts_with("unknown key") || stderr.starts_with("invalid key") =>
+        {
+            Ok(None)
+        }
+        Err(e) => Err(e),
+    }
+}
+
+/// Binding from `bind_done`, or from the `bind X` block older f0 tmux configs had, which
+/// ran `f0 done`.
+pub fn is_f0_binding(binding: &str) -> bool {
+    binding.contains(PATH_OPTION)
+        && (binding.contains(" done ") || binding.contains(" close-menu "))
+}
+
+/// Puts `key` at the start of the status line of `session`, before the global
+/// `status-right`, which gets that much more room so its end is not cut. Built from the
+/// global values every time, so applying it again does not repeat it. `None` brings back
+/// the global status line.
+pub fn show_done_hint(session: &str, key: Option<&str>) -> Result<(), F0Error> {
+    let target = format!("{}:", exact(session));
+    let Some(key) = key else {
+        tmux(&["set-option", "-u", "-t", &target, "status-right"])?;
+        return tmux(&["set-option", "-u", "-t", &target, "status-right-length"]).map(drop);
+    };
+    let status = process::line_output("tmux", ["show-options", "-gv", "status-right"], None)?;
+    let length: usize = tmux(&["show-options", "-gv", "status-right-length"])?
+        .parse()
+        .unwrap_or_default();
+    let hint = done_hint(&prefix()?, key);
+    tmux(&[
+        "set-option",
+        "-t",
+        &target,
+        "status-right",
+        &format!("#[dim]{}#[default]{status}", hint.replace('#', "##")),
+    ])?;
+    tmux(&[
+        "set-option",
+        "-t",
+        &target,
+        "status-right-length",
+        &(length + hint.chars().count()).to_string(),
+    ])
+    .map(drop)
+}
+
+fn done_hint(prefix: &str, key: &str) -> String {
+    format!("{prefix} {key} close task  ")
+}
+
+/// The command a pressed key runs: f0 shows the menu of ways to close the task.
+/// `TMUX_PANE` tells f0 which session it is closing,
+/// since `run-shell` jobs do not run inside a pane. tmux shows only the stdout of the
+/// job, so errors go there too. The full path of f0 because the PATH
+/// of the tmux server may not have it.
+fn done_command(exe: &str) -> String {
+    let job = format!(
+        "TMUX_PANE=#{{pane_id}} {} close-menu #{{q:{PATH_OPTION}}} 2>&1",
+        shell_quote(&exe.replace('#', "##"))
+    );
+    format!("run-shell -b {}", quote(&job))
+}
+
+fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', r"'\''"))
+}
+
+/// `value` as one argument of a tmux command string, such as the command a
+/// prompt or menu runs. Inside double quotes tmux expands `$VAR` and escapes.
 fn quote(value: &str) -> String {
     let mut out = String::with_capacity(value.len() + 2);
     out.push('"');
@@ -281,6 +473,46 @@ mod tests {
     fn quote_keeps_values_literal_for_tmux() {
         assert_eq!(quote("/a b/f0"), r#""/a b/f0""#);
         assert_eq!(quote(r#"it's "x" $HOME \n"#), r#""it's \"x\" \$HOME \\n""#);
+    }
+
+    #[test]
+    fn confirmed_job_runs_only_on_yes_in_either_case() {
+        assert_eq!(
+            confirmed_job("#{q:1} done #{q:2}", &["/bin/f0", "/pool/1"]),
+            "run-shell -b \"case #{q:3} in y|Y) #{q:1} done #{q:2};; esac\" \"/bin/f0\" \"/pool/1\" \"%1\""
+        );
+    }
+
+    #[test]
+    fn background_job_survives_the_format_expansion_of_display_menu() {
+        assert_eq!(
+            background_job("#{q:1} done #{q:2}", &["/bin/f0", "/pool/#1"]),
+            "run-shell -b \"##{q:1} done ##{q:2}\" \"/bin/f0\" \"/pool/##1\""
+        );
+    }
+
+    #[test]
+    fn done_command_runs_this_f0_for_the_pressed_pane() {
+        assert_eq!(
+            done_command("/a b/it's/f0"),
+            r##"run-shell -b "TMUX_PANE=#{pane_id} '/a b/it'\\''s/f0' close-menu #{q:@f0_path} 2>&1""##
+        );
+    }
+
+    #[test]
+    fn recognizes_f0_bindings_old_and_new() {
+        let old = r##"bind-key -T prefix X if-shell -F "#{@f0_path}" { run-shell -b "TMUX_PANE=#{pane_id} f0 done #{q:@f0_path}" } { display-message "Not an f0 session" }"##;
+        assert!(is_f0_binding(old));
+        assert!(is_f0_binding(&format!(
+            "bind-key -T prefix X if-shell -F \"#{{@f0_path}}\" {}",
+            done_command("/bin/f0")
+        )));
+        assert!(!is_f0_binding("bind-key -T prefix X kill-session"));
+    }
+
+    #[test]
+    fn hint_names_the_prefix_and_the_key() {
+        assert_eq!(done_hint("C-a", "X"), "C-a X close task  ");
     }
 
     #[test]
