@@ -9,7 +9,7 @@ The bundled Neovim config is built to review changes made by an agent in the nex
 
 ## The default view
 
-`nvim .` opens three columns: **changed files** on the left, the file in the middle and the **explorer** on the right. Files edited by the agent reload automatically when you focus the editor.
+`nvim .` opens three columns: **changed files** on the left, the file in the middle and the **explorer** on the right. The changed files panel updates as the agent writes, and files edited by the agent reload automatically when you focus the editor.
 
 | Keys | Action |
 |---|---|
