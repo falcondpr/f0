@@ -10,6 +10,8 @@ mod prompt;
 mod tmux;
 mod treehouse;
 
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 /// A worktree-first terminal workspace for AI-assisted development.
@@ -36,7 +38,8 @@ enum Cmd {
         /// Project to edit; defaults to the project of the repo in the current directory.
         project: Option<String>,
     },
-    /// Lease a treehouse slot with a new branch and open its workspace.
+    /// Lease a treehouse slot on the task's branch, creating it unless it exists, and open
+    /// its workspace.
     New {
         /// Task id, appended to the project's branch prefix (e.g. APP-123).
         ticket: String,
@@ -94,7 +97,19 @@ enum Cmd {
         #[arg(long)]
         force: bool,
     },
-    /// Check tools, global defaults and project configs.
+    /// Bind the key that closes a task on the running tmux server; `f0 new` and `f0 open`
+    /// do it for you.
+    Keys,
+    /// Close a slot's session and keep the slot, with its branch and changes, for `f0 open`
+    /// to bring back.
+    Stop {
+        /// Slot id (`hubi/4`), task, session or path, as `f0 ls` shows them; defaults to the current directory.
+        slot: Option<String>,
+    },
+    /// The menu of the key that closes a task, run by tmux from the pane it was pressed in.
+    #[command(hide = true)]
+    CloseMenu { slot: PathBuf },
+    /// Check tools, global defaults, project configs and the tmux keys.
     Doctor,
 }
 
@@ -128,6 +143,9 @@ fn main() -> anyhow::Result<()> {
         Cmd::Ls { all, paths } => commands::ls(all, paths),
         Cmd::Switch => commands::switch(),
         Cmd::Done { slot, force } => commands::done(slot.as_deref(), force),
+        Cmd::Stop { slot } => commands::stop(slot.as_deref()),
+        Cmd::CloseMenu { slot } => commands::close_menu(&slot),
+        Cmd::Keys => commands::keys(),
         Cmd::Doctor => commands::doctor(),
     }
 }

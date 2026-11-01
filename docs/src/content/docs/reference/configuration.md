@@ -45,6 +45,21 @@ agent_width = 35
 
 Servers belong to projects and are not allowed here.
 
+## Keys
+
+f0 binds its tmux keys itself, after your tmux prefix, so they work with any tmux config and without reloading it. `f0 new` and `f0 open` bind them, and `f0 keys` does it for sessions that were already running.
+
+```toml
+[keys]
+done = "X"
+```
+
+| Key | Default | Meaning |
+|---|---|---|
+| `keys.done` | `"X"` | Opens a menu to close the task of the session it is pressed in: keeping its slot, like `f0 stop`, or returning it, like `f0 done`. Any tmux key name (`"Q"`, `"M-x"`); `false` turns it off |
+
+The status line of each f0 session shows the key, like `C-a X close task`. f0 never replaces a key your tmux config already binds to something else: `f0 keys` and `f0 doctor` tell you to pick another one.
+
 ## AI agent
 
 The agent pane runs whatever command you give it, so any AI coding CLI that works in a terminal can be the agent: Claude Code (`claude`), Codex (`codex`), Gemini CLI (`gemini`), opencode (`opencode`) and so on. The pane is titled after the program, like `agent: codex`.

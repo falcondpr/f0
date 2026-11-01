@@ -96,6 +96,8 @@ f0 new <ticket> [--project <nombre>] [--base <rama>] [--type <tipo>] [--start <s
 
 Necesita treehouse, un archivo de proyecto y su [archivo de includes](/es/guides/worktrees/#worktreeinclude). Si falta alguno falla antes de reservar el slot, y también si ya existe una sesión con el mismo nombre.
 
+Si la rama ya existe, en local o en `origin`, como con una tarea devuelta antes de mergearla, el slot la usa en vez de crearla, y `--base` no hace nada. Falla si otra copia de trabajo tiene esa rama: `f0 open` la vuelve a abrir si es un slot.
+
 ## f0 open
 
 Vuelve a abrir el espacio de trabajo de un slot de treehouse, o se conecta a su sesión si sigue abierta.
@@ -143,6 +145,16 @@ treehouse numera los slots por repositorio, así que el mismo número aparece en
 
 Muestra una lista numerada de sesiones de f0 y cambia a la que elijas. Dentro de tmux cambia el cliente actual; fuera, se conecta.
 
+## f0 stop
+
+Cierra la sesión de un slot y conserva el slot, con su rama y sus cambios sin commitear, para volver más tarde.
+
+```bash
+f0 stop [slot]
+```
+
+Recibe el slot como `f0 done`, y por defecto usa la carpeta actual. El agente y los servidores se detienen; `f0 ls` sigue listando el slot, y `f0 open APP-123` rearma su sesión. Escrito dentro de la sesión que cierra, la sesión se cierra en el momento.
+
 ## f0 done
 
 Cierra la sesión de un slot y devuelve el slot al pool.
@@ -162,11 +174,21 @@ f0 done ~/.treehouse/my-app-3f9a2c/4/my-app  # la ruta, de `f0 ls --paths`
 
 Sin `[slot]` usa la carpeta actual. Primero cierra la sesión y después `treehouse return` limpia el slot, y pregunta antes de descartar cambios sin commitear; con `--force` los descarta sin preguntar. Rechaza carpetas que no son un slot.
 
-Dentro de la sesión que cerraría, cerrar la sesión detendría al propio `f0 done` a mitad de camino, así que pregunta en la barra de estado de tmux (`Close my-app/APP-123 and return its slot? (y/n)`, con la cantidad de cambios sin commitear que descartaría, si hay) y tmux cierra la sesión y devuelve el slot en segundo plano. `Ctrl-a X` hace lo mismo desde cualquier panel. Si la devolución en segundo plano falla, tmux muestra un mensaje y el slot sigue en `f0 ls`; ejecuta `f0 done <id>` desde una terminal para ver por qué.
+Dentro de la sesión que cerraría, cerrar la sesión detendría al propio `f0 done` a mitad de camino, así que pregunta en la barra de estado de tmux (`Close my-app/APP-123 and return its slot? (y/n)`, con la cantidad de cambios sin commitear que descartaría, si hay) y tmux cierra la sesión y devuelve el slot en segundo plano. `Ctrl-a X` lo ofrece desde cualquier panel, junto a cerrar la sesión conservando el slot (`f0 stop`), y la barra de estado de la sesión muestra la tecla. Si la devolución en segundo plano falla, tmux muestra un mensaje y el slot sigue en `f0 ls`; ejecuta `f0 done <id>` desde una terminal para ver por qué.
+
+## f0 keys
+
+Define la tecla que cierra una tarea en el servidor de tmux en ejecución y la muestra en la barra de estado de cada sesión de f0.
+
+```bash
+f0 keys
+```
+
+`f0 new` y `f0 open` lo hacen para sus sesiones, e `install.sh` lo ejecuta después de actualizar, así que las sesiones que ya estaban abiertas reciben la tecla nueva sin recargar tmux. La tecla sale de [`[keys] done`](/es/reference/configuration/#teclas); después de cambiarla, ejecuta `f0 keys` para quitar la anterior.
 
 ## f0 doctor
 
-Revisa herramientas, valores globales y proyectos. Termina con error si falta algo obligatorio.
+Revisa herramientas, valores globales, proyectos y las teclas de tmux. Termina con error si falta algo obligatorio.
 
 | Chequeo | Obligatorio |
 |---|---|
@@ -174,6 +196,7 @@ Revisa herramientas, valores globales y proyectos. Termina con error si falta al
 | Al menos un proyecto | Sí |
 | Comandos de editor y agente de los valores globales y de cada proyecto | Sí |
 | `repo` y archivo de includes de cada proyecto | Sí |
+| El servidor de tmux en ejecución define la tecla que cierra una tarea (se omite sin servidor o con `[keys] done = false`) | Sí |
 | `gh`, `rg`, Ghostty | No |
 
 ## Variables de entorno

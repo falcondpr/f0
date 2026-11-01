@@ -71,8 +71,9 @@ const copy = {
 				title: 'Finish',
 				more: '/reference/cli/#f0-done',
 				rows: [
-					{ keys: ['Ctrl-a', 'X'], text: 'Close the task and return its slot, after asking' },
-					{ cmd: 'f0 done', text: 'The same, typed in any pane of the session' },
+					{ keys: ['Ctrl-a', 'X'], text: 'Menu: close keeping the slot, or return it after asking' },
+					{ cmd: 'f0 stop', text: 'Close the session and keep the slot for f0 open' },
+					{ cmd: 'f0 done', text: 'Close and return the slot, typed in any pane of the session' },
 					{ cmd: 'f0 done APP-1', text: 'From any terminal' },
 					{ cmd: 'f0 done APP-1 --force', text: 'Discard uncommitted changes without asking' },
 				],
@@ -154,8 +155,9 @@ const copy = {
 				title: 'Terminar',
 				more: '/es/reference/cli/#f0-done',
 				rows: [
-					{ keys: ['Ctrl-a', 'X'], text: 'Cierra la tarea y devuelve su slot, después de preguntar' },
-					{ cmd: 'f0 done', text: 'Lo mismo, escrito en cualquier panel de la sesión' },
+					{ keys: ['Ctrl-a', 'X'], text: 'Menú: cerrar conservando el slot, o devolverlo después de preguntar' },
+					{ cmd: 'f0 stop', text: 'Cierra la sesión y conserva el slot para f0 open' },
+					{ cmd: 'f0 done', text: 'Cierra y devuelve el slot, escrito en cualquier panel de la sesión' },
 					{ cmd: 'f0 done APP-1', text: 'Desde cualquier terminal' },
 					{ cmd: 'f0 done APP-1 --force', text: 'Descarta los cambios sin commitear sin preguntar' },
 				],

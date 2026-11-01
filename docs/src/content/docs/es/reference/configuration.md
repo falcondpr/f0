@@ -45,6 +45,21 @@ agent_width = 35
 
 Los servidores pertenecen a los proyectos y no se permiten aquí.
 
+## Teclas
+
+f0 define sus teclas de tmux por su cuenta, después de tu prefijo de tmux, así que funcionan con cualquier configuración de tmux y sin recargarla. `f0 new` y `f0 open` las definen, y `f0 keys` lo hace para las sesiones que ya estaban corriendo.
+
+```toml
+[keys]
+done = "X"
+```
+
+| Clave | Por defecto | Significado |
+|---|---|---|
+| `keys.done` | `"X"` | Abre un menú para cerrar la tarea de la sesión donde se aprieta: conservando su slot, como `f0 stop`, o devolviéndolo, como `f0 done`. Cualquier nombre de tecla de tmux (`"Q"`, `"M-x"`); `false` la desactiva |
+
+La barra de estado de cada sesión de f0 muestra la tecla, como `C-a X close task`. f0 nunca reemplaza una tecla que tu configuración de tmux ya usa para otra cosa: `f0 keys` y `f0 doctor` te piden elegir otra.
+
 ## Agente de IA
 
 El panel del agente ejecuta el comando que le des, así que cualquier CLI de IA para programar que funcione en una terminal puede ser el agente: Claude Code (`claude`), Codex (`codex`), Gemini CLI (`gemini`), opencode (`opencode`), etc. El panel lleva el nombre del programa, como `agent: codex`.

@@ -22,6 +22,7 @@ pub fn new(
     let defaults = config::load_defaults(&config_dir)?;
     let projects = config::load_projects(&config_dir, &defaults)?;
     let mut project = resolve_project(&projects, project_name, &config_dir)?.clone();
+    let base_given = base.is_some();
     if base.is_some() {
         project.base = base;
     }
@@ -47,8 +48,7 @@ pub fn new(
         return Err(F0Error::SessionExists { name }.into());
     }
 
-    eprintln!("Leasing a {} slot for {branch}...", project.name);
-    let worktree = treehouse::lease(&project, &branch, &format!("f0:{name}"))?;
+    let worktree = lease_for(&project, &branch, &format!("f0:{name}"), base_given)?;
     start_session(
         &project,
         &name,
@@ -57,6 +57,41 @@ pub fn new(
         false,
         attach,
     )
+}
+
+/// Leases a slot for `branch`. A branch that already exists, from a task returned
+/// before it was merged or pushed from elsewhere, is checked out instead of created.
+fn lease_for(
+    project: &Project,
+    branch: &str,
+    holder: &str,
+    base_given: bool,
+) -> anyhow::Result<PathBuf> {
+    if !git::branch_exists(&project.repo, branch) {
+        eprintln!("Leasing a {} slot for {branch}...", project.name);
+        return Ok(treehouse::lease(project, Some(branch), holder)?);
+    }
+    if let Some(path) = git::checkout_of(&project.repo, branch)? {
+        return Err(F0Error::BranchCheckedOut {
+            branch: branch.to_owned(),
+            path,
+        }
+        .into());
+    }
+    if base_given {
+        eprintln!("{branch} already exists, so --base does nothing");
+    }
+    eprintln!(
+        "Leasing a {} slot for the existing branch {branch}...",
+        project.name
+    );
+    let worktree = treehouse::lease(project, None, holder)?;
+    if let Err(e) = git::switch(&worktree, branch) {
+        // The slot is fresh and detached, so returning it loses nothing.
+        let _ = treehouse::return_slot(&worktree, true);
+        return Err(e.into());
+    }
+    Ok(worktree)
 }
 
 /// Reopens the workspace of a leased slot, for example after tmux restarted. Attaches to
@@ -81,6 +116,8 @@ pub fn open(
                 session.name
             );
         }
+        // A session an older f0 built may predate the key.
+        bind_keys_or_warn(&[&session.name]);
         return attach_if(&session.name, attach);
     }
 
@@ -254,6 +291,13 @@ pub fn switch() -> anyhow::Result<()> {
 const DONE_JOB: &str = "#{q:1} done --force #{q:2} >/dev/null 2>&1 || tmux display-message -d 0 \
      'f0 done could not return the slot; run f0 ls and f0 done <id> in a terminal to see why'";
 
+/// The menu choices of the key that closes a task, as `run-shell` jobs: `#{1}` is f0,
+/// `#{2}` the slot and `#{3}` the pane the key was pressed in. Returning asks first, in
+/// the status line, like `f0 done` inside the session.
+const STOP_JOB: &str = "#{q:1} stop #{q:2} >/dev/null 2>&1 || tmux display-message -d 0 \
+     'f0 stop could not close the session; run f0 stop <id> in a terminal to see why'";
+const RETURN_JOB: &str = "TMUX_PANE=#{q:3} #{q:1} done #{q:2} 2>&1";
+
 pub fn done(target: Option<&str>, force: bool) -> anyhow::Result<()> {
     require_treehouse()?;
     let config_dir = config::config_dir()?;
@@ -303,6 +347,113 @@ fn done_from_inside(session: &str, root: &Path, force: bool) -> anyhow::Result<(
     Ok(())
 }
 
+/// Binds the key that closes a task on the running tmux server and shows it in every f0
+/// session. `f0 new` and `f0 open` do it for their sessions; this is for the sessions
+/// that were already running when f0 was updated.
+pub fn keys() -> anyhow::Result<()> {
+    if !tmux::server_running() {
+        println!(
+            "No tmux server running; `f0 new` and `f0 open` bind the keys when they start one."
+        );
+        return Ok(());
+    }
+    let sessions = tmux::sessions()?;
+    let names: Vec<&str> = sessions.iter().map(|s| s.name.as_str()).collect();
+    match bind_keys(&names)? {
+        Some(key) => println!(
+            "{} {key} closes the task of an f0 session ({} running)",
+            tmux::prefix()?,
+            names.len()
+        ),
+        None => println!("The key that closes a task is turned off in config.toml"),
+    }
+    Ok(())
+}
+
+/// The configured key that closes a task, bound on the tmux server and shown in the
+/// status line of `sessions`. `None` when `[keys] done` is `false`.
+fn bind_keys(sessions: &[&str]) -> anyhow::Result<Option<String>> {
+    let key = config::load_keys(&config::config_dir()?)?.done;
+    let exe = std::env::current_exe().context("could not locate the f0 binary")?;
+    tmux::bind_done(key.as_deref(), &exe.to_string_lossy())?;
+    for session in sessions {
+        tmux::show_done_hint(session, key.as_deref())?;
+    }
+    Ok(key)
+}
+
+/// The sessions work without the key, and `f0 done` typed in a pane closes the task too,
+/// so a failure here only warns.
+fn bind_keys_or_warn(sessions: &[&str]) -> Option<String> {
+    bind_keys(sessions)
+        .inspect_err(|e| eprintln!("Could not bind the key that closes a task: {e:#}"))
+        .ok()
+        .flatten()
+}
+
+/// Closes the session of a slot and keeps the slot leased, with its branch and
+/// uncommitted changes, for `f0 open` to rebuild.
+pub fn stop(target: Option<&str>) -> anyhow::Result<()> {
+    require_treehouse()?;
+    let config_dir = config::config_dir()?;
+    let defaults = config::load_defaults(&config_dir)?;
+    let projects = config::load_projects(&config_dir, &defaults)?;
+    let root = resolve_slot(target, &projects)?;
+    let repo = git::main_repo_root(&root)?;
+    if !is_treehouse_slot(&repo, &root)? {
+        return Err(F0Error::NotASlot { path: root }.into());
+    }
+
+    let mut sessions = tmux::sessions_for(&root)?;
+    if sessions.is_empty() {
+        println!("{} has no session running", root.display());
+        return Ok(());
+    }
+    let task = config::project_for_repo(&projects, &repo)
+        .zip(git::current_branch(&root)?)
+        .map_or_else(
+            || root.display().to_string(),
+            |(project, branch)| project.task_from_branch(&branch).to_owned(),
+        );
+    eprintln!("The slot stays leased; `f0 open {task}` brings the session back");
+    // Closing the session this runs in ends this process, so it goes last.
+    let current = tmux::current_session();
+    sessions.sort_by_key(|s| current.as_deref() == Some(s.name.as_str()));
+    for session in &sessions {
+        eprintln!("Closing session {}", session.name);
+        tmux::kill_session(&session.name)?;
+    }
+    Ok(())
+}
+
+/// What the key that closes a task runs, from the pane it was pressed in: a menu to
+/// close the session keeping the slot, or returning it.
+pub fn close_menu(root: &Path) -> anyhow::Result<()> {
+    let pane = std::env::var("TMUX_PANE").context("the key that closes a task sets TMUX_PANE")?;
+    let session = tmux::current_session().context("no tmux session owns TMUX_PANE")?;
+    let exe = std::env::current_exe().context("could not locate the f0 binary")?;
+    let (exe, root) = (exe.to_string_lossy(), root.to_string_lossy());
+    tmux::menu(
+        &session,
+        &format!("Close {session}"),
+        &[
+            tmux::MenuItem {
+                label: "Close, keep the slot",
+                key: "k",
+                template: STOP_JOB,
+                args: &[&exe, &root],
+            },
+            tmux::MenuItem {
+                label: "Close and return the slot",
+                key: "r",
+                template: RETURN_JOB,
+                args: &[&exe, &root, &pane],
+            },
+        ],
+    )?;
+    Ok(())
+}
+
 pub fn doctor() -> anyhow::Result<()> {
     let mut problems = 0;
 
@@ -335,6 +486,9 @@ pub fn doctor() -> anyhow::Result<()> {
     };
     problems += report_command("editor", &defaults.editor.cmd);
     problems += report_command("agent", &defaults.agent.cmd);
+
+    println!("\ntmux keys");
+    problems += report_done_key(config::load_keys(&config_dir)?.done.as_deref())?;
 
     println!("\nProjects ({})", config_dir.join("projects").display());
     let projects = match config::load_projects(&config_dir, &defaults) {
@@ -398,6 +552,9 @@ fn start_session(
         return Err(e.into());
     }
     eprintln!("Session {name} ready at {}", worktree.display());
+    if let Some(key) = bind_keys_or_warn(&[name]) {
+        eprintln!("{} {key} in the session closes the task", tmux::prefix()?);
+    }
     attach_if(name, attach)
 }
 
@@ -540,6 +697,31 @@ fn report(label: &str, ok: bool, required: bool) -> u32 {
     let note = if !ok && !required { " (optional)" } else { "" };
     println!("  {mark} {label}{note}");
     u32::from(!ok && required)
+}
+
+/// Checks that the running tmux server has the key that closes a task.
+fn report_done_key(key: Option<&str>) -> anyhow::Result<u32> {
+    let Some(key) = key else {
+        println!("  - close a task: turned off in config.toml");
+        return Ok(0);
+    };
+    if !tmux::server_running() {
+        return Ok(report(
+            &format!("close a task with `{key}`: no tmux server running to check"),
+            false,
+            false,
+        ));
+    }
+    let label = format!("{} {key} closes a task", tmux::prefix()?);
+    Ok(match tmux::prefix_binding(key)? {
+        Some(binding) if tmux::is_f0_binding(&binding) => report(&label, true, true),
+        Some(_) => report(
+            &format!("{label}: tmux binds it to something else; set `[keys] done` in config.toml"),
+            false,
+            true,
+        ),
+        None => report(&format!("{label}: not bound, run `f0 keys`"), false, true),
+    })
 }
 
 /// Checks the program a pane will run; a missing one would leave the pane broken.

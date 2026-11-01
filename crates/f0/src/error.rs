@@ -49,6 +49,12 @@ pub enum F0Error {
         source: serde_json::Error,
     },
 
+    #[error(
+        "branch `{branch}` is already checked out at {path}; if that is a slot, `f0 open` \
+         reopens it, otherwise switch that checkout to another branch"
+    )]
+    BranchCheckedOut { branch: String, path: PathBuf },
+
     #[error("tmux session `{name}` already exists, use `f0 open` to attach")]
     SessionExists { name: String },
 
@@ -116,6 +122,15 @@ pub enum F0Error {
          letters, digits, `-`, `_` or `.`"
     )]
     InvalidProjectName { name: String },
+
+    #[error("`{key}` is not a tmux key; set `[keys] done` in config.toml to another, or `false`")]
+    InvalidKey { key: String },
+
+    #[error(
+        "tmux already binds `{key}` after the prefix to something else ({binding}); set \
+         `[keys] done` in config.toml to another key, or `false`"
+    )]
+    KeyTaken { key: String, binding: String },
 
     #[error("could not determine the home directory")]
     NoHomeDir,

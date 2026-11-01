@@ -17,7 +17,7 @@ The prefix is `Ctrl-a`.
 | `Ctrl-a z` | Zoom the current pane (toggle) |
 | `Ctrl-a s` | Pick a session |
 | `Ctrl-a d` | Detach; everything keeps running |
-| `Ctrl-a X` | Close the f0 task of this session and return its slot, after asking (`f0 done`) |
+| `Ctrl-a X` | Close the f0 task of this session: a menu to keep its slot for later (`f0 stop`) or return it, after asking (`f0 done`). Bound by f0 itself, see [Keys](/reference/configuration/#keys) |
 | `Ctrl-a \|` / `Ctrl-a -` | Split right / below |
 | `Ctrl-a c` | New window |
 | `Ctrl-a [` | Scroll back (`v` select, `y` copy to the clipboard) |
@@ -75,4 +75,4 @@ The mouse is enabled: click to focus, drag borders to resize, scroll to see hist
 
 `Ctrl-h/j/k/l` across panes needs both halves of [vim-tmux-navigator](https://github.com/christoomey/vim-tmux-navigator): its snippet in your tmux config and the plugin in Neovim. Without them, move between panes with your tmux prefix and the arrow keys. Pane titles appear only if your tmux config sets `pane-border-status`.
 
-For `Ctrl-a X`, copy its `bind X` block from `config/tmux/tmux.conf`. Typing `f0 done` in any pane of the session works without it.
+f0 binds `X` after your own prefix whenever it creates or opens a session, so it works with any tmux config and needs no reload. The status line of each f0 session shows it, like `C-b X close task`. Pick another key or turn it off with [`[keys] done`](/reference/configuration/#keys).

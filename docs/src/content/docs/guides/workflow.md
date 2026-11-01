@@ -71,7 +71,7 @@ gh pr create --base develop --fill
 
 ## 7. Finish
 
-Press `Ctrl-a X` inside the task session, or type `f0 done` in any of its panes. From another terminal, name the task:
+Press `Ctrl-a X` inside the task session (its status line reminds you) and pick **Close and return the slot**, or type `f0 done` in any of its panes. From another terminal, name the task:
 
 ```bash
 f0 done APP-123   # by task
@@ -81,5 +81,7 @@ f0 done my-app/4  # or by the slot id that `f0 ls` shows
 The session name (`my-app/APP-123`) or the slot path work too.
 
 f0 closes the session and runs `treehouse return`, which stops leftover processes and gives the slot back to the pool. treehouse asks before discarding uncommitted changes.
+
+To pause a task instead, pick **Close, keep the slot** in the same menu, or run `f0 stop`: the session closes and the slot stays yours.
 
 To come back to a task later, `f0 open APP-123` reattaches, or rebuilds the session if it was closed. A rebuilt session keeps the worktree with its uncommitted changes, and the agent resumes the task's last conversation.

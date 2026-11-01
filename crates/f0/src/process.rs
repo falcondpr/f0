@@ -11,6 +11,24 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
+    Ok(raw_output(program, args, cwd)?.trim().to_owned())
+}
+
+/// Like `output`, but only drops the final newline, for values where spaces count.
+pub fn line_output<I, S>(program: &str, args: I, cwd: Option<&Path>) -> Result<String, F0Error>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let out = raw_output(program, args, cwd)?;
+    Ok(out.strip_suffix('\n').unwrap_or(&out).to_owned())
+}
+
+fn raw_output<I, S>(program: &str, args: I, cwd: Option<&Path>) -> Result<String, F0Error>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
     let mut command = Command::new(program);
     command.args(args).stdin(Stdio::null());
     if let Some(dir) = cwd {
@@ -26,7 +44,7 @@ where
             stderr: String::from_utf8_lossy(&out.stderr).trim().to_owned(),
         });
     }
-    Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
+    Ok(String::from_utf8_lossy(&out.stdout).into_owned())
 }
 
 /// Runs `program` attached to the current terminal, so it can prompt the user.

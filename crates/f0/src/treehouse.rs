@@ -17,16 +17,18 @@ pub struct Slot {
     pub lease_holder: String,
 }
 
-/// Leases a slot with a new branch cut from the project's base and returns its path.
-pub fn lease(project: &Project, branch: &str, holder: &str) -> Result<PathBuf, F0Error> {
+/// Leases a slot and returns its path: with a new branch cut from the project's base,
+/// or detached at the base when `branch` is `None`.
+pub fn lease(project: &Project, branch: Option<&str>, holder: &str) -> Result<PathBuf, F0Error> {
     let mut args: Vec<String> = vec![
         "get".into(),
         "--lease".into(),
         "--lease-holder".into(),
         holder.into(),
-        "--branch".into(),
-        branch.into(),
     ];
+    if let Some(branch) = branch {
+        args.extend(["--branch".into(), branch.into()]);
+    }
     if let Some(base) = &project.base {
         args.extend(["--base".into(), base.clone()]);
     }
