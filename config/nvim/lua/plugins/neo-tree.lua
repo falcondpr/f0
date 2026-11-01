@@ -9,6 +9,27 @@ return {
   config = function()
     require("neo-tree").setup({
       close_if_last_window = true,
+      -- La raíz repetía la ruta (`GIT STATUS for ~/…`), que ya muestran el título del
+      -- panel y la barra de tmux.
+      hide_root_node = true,
+
+      default_component_configs = {
+        -- Una sola marca por archivo: la letra del cambio en su color. Los símbolos de
+        -- stage repetían lo mismo con otro ícono; staged vs. unstaged se ve en diffview.
+        git_status = {
+          symbols = {
+            added = "A",
+            deleted = "D",
+            modified = "M",
+            renamed = "R",
+            untracked = "?",
+            ignored = "",
+            unstaged = "",
+            staged = "",
+            conflict = "!",
+          },
+        },
+      },
 
       -- El panel git_status pide `git status --ignored=traditional -uall`, que en un
       -- monorepo enumera todo node_modules (~230k entradas, ~1.8 s) para luego
@@ -69,9 +90,8 @@ return {
     })
 
     local function ide_layout()
-      vim.cmd("Neotree show left git_status")
-      vim.cmd("Neotree show right filesystem")
-      -- devolver el foco al panel central (el código)
+      -- El foco va al panel central (el código) antes de abrir los paneles:
+      -- `Neotree show` devuelve el foco, cuando termina, a la ventana que estaba activa.
       for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
         local buf = vim.api.nvim_win_get_buf(win)
         if vim.bo[buf].filetype ~= "neo-tree" then
@@ -79,6 +99,8 @@ return {
           break
         end
       end
+      vim.cmd("Neotree show left git_status")
+      vim.cmd("Neotree show right filesystem")
     end
 
     -- El panel git_status no escucha el filesystem, y el watcher del explorer solo

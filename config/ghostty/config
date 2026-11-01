@@ -1,6 +1,12 @@
-# f0 additions. Colors stay in Ghostty's own config file.
+# f0 additions. The theme follows the macOS appearance and matches the tmux and
+# Neovim configs; colors set in your own Ghostty config file override it.
+theme = light:Catppuccin Latte,dark:Catppuccin Mocha
 font-family = JetBrainsMono Nerd Font
 font-size = 14
+window-padding-x = 12
+window-padding-y = 8
+window-padding-balance = true
+window-padding-color = extend
 macos-option-as-alt = true
 window-save-state = always
 shell-integration-features = no-cursor
