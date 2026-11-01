@@ -284,20 +284,22 @@ pub fn switch() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Closes the session of a slot and returns the slot to the pool.
-/// The job `f0 done` leaves to tmux when it runs inside the session it closes: `#{1}` is
-/// f0 and `#{2}` the slot. Its output has nowhere to go once the session is gone, so a
-/// failure is shown as a message.
-const DONE_JOB: &str = "#{q:1} done --force #{q:2} >/dev/null 2>&1 || tmux display-message -d 0 \
-     'f0 done could not return the slot; run f0 ls and f0 done <id> in a terminal to see why'";
-
-/// The menu choices of the key that closes a task, as `run-shell` jobs: `#{1}` is f0,
-/// `#{2}` the slot and `#{3}` the pane the key was pressed in. Returning asks first, in
-/// the status line, like `f0 done` inside the session.
-const STOP_JOB: &str = "#{q:1} stop #{q:2} >/dev/null 2>&1 || tmux display-message -d 0 \
-     'f0 stop could not close the session; run f0 stop <id> in a terminal to see why'";
+/// The job that closes a task from inside its session: it takes the client that asked
+/// (`#{1}`) out of tmux and runs `#{2}`, a `tmux::terminal_command`, in its terminal.
+/// Closing the session from a tmux job would detach that client anyway, and whatever the
+/// job printed, including why returning the slot failed, would never be seen.
+const TERMINAL_JOB: &str = "tmux detach-client -t #{q:1} -E #{q:2}";
+/// `f0 done --force` inside a session no client shows: nobody can see its output.
+/// `#{1}` is f0 and `#{2}` the slot.
+const DONE_JOB: &str = "#{q:1} done --force #{q:2} >/dev/null 2>&1";
+/// The return choice of the key's menu: `#{1}` is f0, `#{2}` the slot and `#{3}` the
+/// pane the key was pressed in. It asks first, in the status line, like `f0 done` inside
+/// the session.
 const RETURN_JOB: &str = "TMUX_PANE=#{q:3} #{q:1} done #{q:2} 2>&1";
+const DONE_FAILED: &str = "The slot is still leased; f0 ls lists it. Press Enter to close.";
+const STOP_FAILED: &str = "The session may still be running. Press Enter to close.";
 
+/// Closes the session of a slot and returns the slot to the pool.
 pub fn done(target: Option<&str>, force: bool) -> anyhow::Result<()> {
     require_treehouse()?;
     let config_dir = config::config_dir()?;
@@ -326,15 +328,24 @@ pub fn done(target: Option<&str>, force: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Closing the session would kill this process halfway, so tmux runs the rest in the
-/// background. That job has no terminal for treehouse to ask in, so f0 asks first and
-/// warns about the uncommitted changes the job will discard.
+/// Closing the session would kill this process halfway, so the rest runs in the terminal
+/// of the session's client once it leaves tmux. treehouse cannot ask there before
+/// discarding changes, so f0 asks first and warns about the uncommitted ones.
 fn done_from_inside(session: &str, root: &Path, force: bool) -> anyhow::Result<()> {
     let exe = std::env::current_exe().context("could not locate the f0 binary")?;
     let (exe, root_text) = (exe.to_string_lossy(), root.to_string_lossy());
-    let args = [exe.as_ref(), root_text.as_ref()];
+    let client = match tmux::client_of(session) {
+        Ok(client) => client,
+        Err(F0Error::NoClient { .. }) if force => {
+            tmux::run_in_background(DONE_JOB, &[&exe, &root_text])?;
+            return Ok(());
+        }
+        Err(e) => return Err(e.into()),
+    };
+    let command = tmux::terminal_command(&[&exe, "done", "--force", &root_text], DONE_FAILED);
+    let args = [client.as_str(), command.as_str()];
     if force {
-        tmux::run_in_background(DONE_JOB, &args)?;
+        tmux::run_in_background(TERMINAL_JOB, &args)?;
         return Ok(());
     }
     let prompt = match git::changed_files(root)? {
@@ -343,7 +354,7 @@ fn done_from_inside(session: &str, root: &Path, force: bool) -> anyhow::Result<(
             format!("Close {session}? {changes} uncommitted change(s) will be discarded (y/n)")
         }
     };
-    tmux::confirm_then_run(session, &prompt, DONE_JOB, &args)?;
+    tmux::confirm_then_run(session, &prompt, TERMINAL_JOB, &args)?;
     Ok(())
 }
 
@@ -433,6 +444,8 @@ pub fn close_menu(root: &Path) -> anyhow::Result<()> {
     let session = tmux::current_session().context("no tmux session owns TMUX_PANE")?;
     let exe = std::env::current_exe().context("could not locate the f0 binary")?;
     let (exe, root) = (exe.to_string_lossy(), root.to_string_lossy());
+    let client = tmux::client_of(&session)?;
+    let stop = tmux::terminal_command(&[&exe, "stop", &root], STOP_FAILED);
     tmux::menu(
         &session,
         &format!("Close {session}"),
@@ -440,8 +453,8 @@ pub fn close_menu(root: &Path) -> anyhow::Result<()> {
             tmux::MenuItem {
                 label: "Close, keep the slot",
                 key: "k",
-                template: STOP_JOB,
-                args: &[&exe, &root],
+                template: TERMINAL_JOB,
+                args: &[&client, &stop],
             },
             tmux::MenuItem {
                 label: "Close and return the slot",

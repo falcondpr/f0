@@ -174,7 +174,7 @@ f0 done ~/.treehouse/my-app-3f9a2c/4/my-app  # the path, from `f0 ls --paths`
 
 Without `[slot]` it uses the current directory. The session is closed first, then `treehouse return` cleans the slot, asking before it discards uncommitted changes; `--force` discards them without asking. Refuses folders that are not a slot.
 
-Inside the session it would close, closing the session would stop `f0 done` itself halfway, so it asks in the tmux status line instead (`Close my-app/APP-123 and return its slot? (y/n)`, with the number of uncommitted changes it would discard, if any) and tmux closes the session and returns the slot in the background. `Ctrl-a X` offers it from any pane, next to closing the session and keeping the slot (`f0 stop`), and the status line of the session shows the key. If the background return fails, tmux shows a message and the slot stays in `f0 ls`; run `f0 done <id>` from a terminal to see why.
+Inside the session it would close, closing the session would stop `f0 done` itself halfway, so it asks in the tmux status line instead (`Close my-app/APP-123 and return its slot? (y/n)`, with the number of uncommitted changes it would discard, if any) and then your terminal leaves tmux and closes the session and returns the slot there, so you see the result. `Ctrl-a X` offers it from any pane, next to closing the session and keeping the slot (`f0 stop`), and the status line of the session shows the key. If returning the slot fails, the terminal shows why and waits for Enter, and the slot stays in `f0 ls`.
 
 ## f0 keys
 

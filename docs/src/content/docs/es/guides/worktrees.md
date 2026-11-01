@@ -41,4 +41,4 @@ f0 lo pasa como `treehouse get --include-file`.
 
 ## Ejecutar `done` dentro de su propia sesión
 
-Devolver un slot detiene todos sus procesos, incluida la shell que estaría ejecutando `f0 done`. Por eso, dentro de la sesión de la tarea, `f0 done` (o `Ctrl-a X`) pregunta en la barra de estado de tmux y deja el trabajo a un job de tmux en segundo plano, que no pertenece a ningún panel. Ese job no puede responder la pregunta de treehouse sobre cambios sin commitear, así que f0 pregunta antes y te dice cuántos se descartarían.
+Devolver un slot detiene todos sus procesos, incluida la shell que estaría ejecutando `f0 done`. Por eso, dentro de la sesión de la tarea, `f0 done` (o `Ctrl-a X`) pregunta en la barra de estado de tmux y después saca tu terminal de tmux para hacer el trabajo ahí, donde ves su salida. En ese punto treehouse no puede preguntar por los cambios sin commitear, así que f0 pregunta antes y te dice cuántos se descartarían.

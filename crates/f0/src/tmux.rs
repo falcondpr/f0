@@ -124,7 +124,8 @@ pub fn menu(session: &str, title: &str, items: &[MenuItem]) -> Result<(), F0Erro
     tmux(&command).map(drop)
 }
 
-fn client_of(session: &str) -> Result<String, F0Error> {
+/// The client showing `session`, which `confirm_then_run` and `menu` ask in.
+pub fn client_of(session: &str) -> Result<String, F0Error> {
     let clients = tmux(&[
         "list-clients",
         "-t",
@@ -288,6 +289,23 @@ fn done_command(exe: &str) -> String {
         shell_quote(&exe.replace('#', "##"))
     );
     format!("run-shell -b {}", quote(&job))
+}
+
+/// A shell command line that runs `args` in the terminal of a client that left tmux, and
+/// on failure keeps `failure` and the error on screen until Enter, since that terminal
+/// may close as soon as the command ends. tmux runs it with the `default-shell`, which
+/// may not be a POSIX shell, hence `/bin/sh`.
+pub fn terminal_command(args: &[&str], failure: &str) -> String {
+    let command = args
+        .iter()
+        .map(|arg| shell_quote(arg))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let script = format!(
+        "{command} || {{ echo; echo {}; read -r _; }}",
+        shell_quote(failure)
+    );
+    format!("/bin/sh -c {}", shell_quote(&script))
 }
 
 fn shell_quote(value: &str) -> String {
@@ -496,6 +514,27 @@ mod tests {
         assert_eq!(
             done_command("/a b/it's/f0"),
             r##"run-shell -b "TMUX_PANE=#{pane_id} '/a b/it'\\''s/f0' close-menu #{q:@f0_path} 2>&1""##
+        );
+    }
+
+    #[test]
+    fn terminal_command_keeps_args_literal_and_waits_on_failure() {
+        let run = |line: String| {
+            let out = Command::new("sh")
+                .args(["-c", &line])
+                .stdin(Stdio::null())
+                .output()
+                .unwrap();
+            String::from_utf8(out.stdout).unwrap()
+        };
+        let arg = "/a b/it's #1 $HOME `x` \\";
+        assert_eq!(
+            run(terminal_command(&["printf", "%s|", arg], "Failed.")),
+            format!("{arg}|")
+        );
+        assert_eq!(
+            run(terminal_command(&["false"], "it's failed")),
+            "\nit's failed\n"
         );
     }
 
