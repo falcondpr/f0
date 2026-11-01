@@ -29,6 +29,8 @@ return {
           TelescopeSelectionCaret = { fg = c.peach, bg = c.surface0 },
           TelescopePromptPrefix = { fg = c.peach },
           TelescopeMatching = { fg = c.peach },
+          F0EmptyKey = { fg = c.overlay2 },
+          F0EmptyText = { fg = c.overlay0 },
         }
       end,
     })
