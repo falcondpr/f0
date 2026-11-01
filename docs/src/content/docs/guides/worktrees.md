@@ -41,4 +41,4 @@ f0 passes it as `treehouse get --include-file`.
 
 ## Running `done` inside its own session
 
-Returning a slot stops every process inside it, including the shell that would be running `f0 done`. So inside the task's session, `f0 done` (or `Ctrl-a X`) asks in the tmux status line and leaves the work to a tmux background job, which no pane owns. That job cannot answer treehouse's question about uncommitted changes, so f0 asks first and tells you how many would be discarded.
+Returning a slot stops every process inside it, including the shell that would be running `f0 done`. So inside the task's session, `f0 done` (or `Ctrl-a X`) asks in the tmux status line and then takes your terminal out of tmux to do the work there, where you see its output. treehouse cannot ask about uncommitted changes at that point, so f0 asks first and tells you how many would be discarded.

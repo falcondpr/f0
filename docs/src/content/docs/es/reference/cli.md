@@ -174,7 +174,7 @@ f0 done ~/.treehouse/my-app-3f9a2c/4/my-app  # la ruta, de `f0 ls --paths`
 
 Sin `[slot]` usa la carpeta actual. Primero cierra la sesión y después `treehouse return` limpia el slot, y pregunta antes de descartar cambios sin commitear; con `--force` los descarta sin preguntar. Rechaza carpetas que no son un slot.
 
-Dentro de la sesión que cerraría, cerrar la sesión detendría al propio `f0 done` a mitad de camino, así que pregunta en la barra de estado de tmux (`Close my-app/APP-123 and return its slot? (y/n)`, con la cantidad de cambios sin commitear que descartaría, si hay) y tmux cierra la sesión y devuelve el slot en segundo plano. `Ctrl-a X` lo ofrece desde cualquier panel, junto a cerrar la sesión conservando el slot (`f0 stop`), y la barra de estado de la sesión muestra la tecla. Si la devolución en segundo plano falla, tmux muestra un mensaje y el slot sigue en `f0 ls`; ejecuta `f0 done <id>` desde una terminal para ver por qué.
+Dentro de la sesión que cerraría, cerrar la sesión detendría al propio `f0 done` a mitad de camino, así que pregunta en la barra de estado de tmux (`Close my-app/APP-123 and return its slot? (y/n)`, con la cantidad de cambios sin commitear que descartaría, si hay) y después tu terminal sale de tmux y ahí cierra la sesión y devuelve el slot, así ves el resultado. `Ctrl-a X` lo ofrece desde cualquier panel, junto a cerrar la sesión conservando el slot (`f0 stop`), y la barra de estado de la sesión muestra la tecla. Si la devolución falla, la terminal muestra por qué y espera Enter, y el slot sigue en `f0 ls`.
 
 ## f0 keys
 
