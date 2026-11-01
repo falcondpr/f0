@@ -3,5 +3,6 @@ vim.g.maplocalleader = " "
 
 require("f0.options")
 require("f0.autocmds")
+require("f0.keymaps")
 require("f0.lazy")
-require("f0.transparency")
+require("f0.appearance")

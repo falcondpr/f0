@@ -21,6 +21,15 @@ opt.ignorecase = true
 opt.smartcase = true
 opt.termguicolors = true
 
+-- Sin `~` al final del buffer y separadores en blanco: el tema los pinta del tono de
+-- los paneles, así que el límite entre ventanas es un cambio de fondo y no una línea
+opt.fillchars = { eob = " ", diff = " ", vert = " ", horiz = " ", horizup = " ",
+  horizdown = " ", vertleft = " ", vertright = " ", verthoriz = " " }
+opt.laststatus = 3
+-- Sin tabline: diffview abre su propia pestaña y la barra solo repetiría los nombres
+opt.showtabline = 0
+opt.showmode = false -- lo muestra lualine
+
 opt.signcolumn = "yes"
 opt.expandtab = true
 opt.shiftwidth = 2
