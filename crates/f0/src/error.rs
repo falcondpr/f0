@@ -4,7 +4,10 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum F0Error {
-    #[error("`{program}` is not installed or not in PATH")]
+    #[error(
+        "`{program}` is not installed or not in PATH (PATH={})",
+        std::env::var("PATH").unwrap_or_default()
+    )]
     MissingProgram { program: String },
 
     #[error("could not run `{program}`: {source}")]

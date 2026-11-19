@@ -83,7 +83,7 @@ f0.app 是 f0 自己的终端，所以无论你平时用什么终端，它的快
 - 它独立于 Ghostty：无论你的 Ghostty 是否打开，它和它的配置都不会影响 f0.app，f0.app 也不会修改它们。
 - 安装脚本复制 `/Applications/Ghostty.app`（缺少时用 Homebrew 安装），重命名副本，设置 bundle id 为 `com.falcondpr.f0`，并进行 ad hoc 签名。
 - 副本停留在复制时的 Ghostty 版本。更新 Ghostty 或 f0 后，再次运行 `install.sh` 重新构建它。
-- 窗口在你的登录 shell 中启动，所以即使从 Finder 打开，`PATH` 中也有 Homebrew 和 Cargo。
+- 窗口在你的登录 shell 中启动，所以即使从 Finder 打开，`PATH` 中也有 Homebrew 和 Cargo。f0.app 打开时还会向你的 shell 询问终端看到的 `PATH`（包括 `~/.zshrc` 添加的部分），并在 `~/.local/bin`、`/opt/homebrew/bin` 和 `/usr/local/bin` 存在时把它们追加进去。
 
 <Aside>
 `install.sh` 每次都会重写 `~/.config/f0/ghostty.conf`，被修改过的文件会先移动到

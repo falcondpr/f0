@@ -85,7 +85,7 @@ f0.app is f0's own terminal, so its keys work the same whatever terminal you use
 - It is separate from Ghostty: your Ghostty, open or closed, and its config do not affect it, and it does not change them.
 - The installer copies `/Applications/Ghostty.app`, installing it with Homebrew when missing, renames the copy, gives it the bundle id `com.falcondpr.f0` and signs it ad hoc.
 - The copy stays on the Ghostty version it was made from. Run `install.sh` again after updating Ghostty or f0 to rebuild it.
-- Windows start in your login shell, so `PATH` has Homebrew and Cargo even when you open the app from Finder.
+- Windows start in your login shell, so `PATH` has Homebrew and Cargo even when you open the app from Finder. When it opens, f0.app also asks your shell for the `PATH` your terminal sees, including what `~/.zshrc` adds, and appends `~/.local/bin`, `/opt/homebrew/bin` and `/usr/local/bin` when they exist.
 
 <Aside>
 `install.sh` rewrites `~/.config/f0/ghostty.conf` every time, moving a changed one to

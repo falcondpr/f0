@@ -85,7 +85,7 @@ f0.app es la terminal propia de f0, así sus atajos funcionan igual uses la term
 - Es independiente de Ghostty: tu Ghostty, abierto o cerrado, y su configuración no la afectan, y ella no los cambia.
 - El instalador copia `/Applications/Ghostty.app`, instalándolo con Homebrew si falta, renombra la copia, le da el bundle id `com.falcondpr.f0` y la firma ad hoc.
 - La copia se queda en la versión de Ghostty de la que se hizo. Vuelve a ejecutar `install.sh` después de actualizar Ghostty o f0 para recrearla.
-- Las ventanas arrancan en tu shell de login, así el `PATH` tiene Homebrew y Cargo aunque abras la app desde Finder.
+- Las ventanas arrancan en tu shell de login, así el `PATH` tiene Homebrew y Cargo aunque abras la app desde Finder. Al abrirse, f0.app también le pide a tu shell el `PATH` que ve tu terminal, incluido lo que agrega `~/.zshrc`, y suma `~/.local/bin`, `/opt/homebrew/bin` y `/usr/local/bin` si existen.
 
 <Aside>
 `install.sh` reescribe `~/.config/f0/ghostty.conf` cada vez, y mueve uno modificado a
