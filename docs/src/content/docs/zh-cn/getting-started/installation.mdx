@@ -33,7 +33,7 @@ import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
    ~/dev/f0/install.sh
    ```
 
-   安装 tmux、treehouse、Neovim、ripgrep、fd 和 Ghostty，把内置配置链接到 `~/.config`，并构建 [f0.app](#f0app)。
+   安装 tmux、treehouse、Neovim、ripgrep、fd、Ghostty 和[字体](#字体)，把内置配置链接到 `~/.config`，并构建 [f0.app](#f0app)。
 
    </TabItem>
    <TabItem label="保留我的配置">
@@ -65,8 +65,8 @@ import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 |---|---|
 | `--no-nvim` | 保留你自己的 Neovim 配置（也不安装 Neovim、ripgrep 和 fd） |
 | `--no-tmux-config` | 保留你自己的 tmux 配置 |
-| `--no-ghostty` | 保留你自己的 Ghostty 配置。f0.app 仍会安装 Ghostty，并且从不读取这个配置 |
-| `--no-app` | 不构建 f0.app |
+| `--no-ghostty` | 保留你自己的 Ghostty 配置。f0.app 仍会安装 Ghostty 和字体，并且从不读取这个配置 |
+| `--no-app` | 不构建 f0.app。同时使用 `--no-ghostty` 时，也不安装字体 |
 | `--cli-only` | 等同于上面四个参数 |
 | `--yes` | 不询问，直接替换已有配置 |
 
@@ -93,6 +93,12 @@ f0.app 是 f0 自己的终端，所以无论你平时用什么终端，它的快
 
 启动器第一次在“桌面”或“文稿”中查找仓库时，macOS 会询问是否允许 f0 读取它们。
 
+## 字体
+
+f0.app 和内置的 Ghostty 配置使用 [JetBrainsMono Nerd Font](https://github.com/ryanoasis/nerd-fonts)：带连字的 JetBrains Mono，加上启动器和 Neovim 绘制的 Nerd Font 图标。安装脚本用 Homebrew 安装它（`font-jetbrains-mono-nerd-font`），除非 `~/Library/Fonts` 或 `/Library/Fonts` 里已经有一份。缺少时 `f0 doctor` 会提示。
+
+没有这个字体时，Ghostty 会换用其他等宽字体，图标显示为空白方框。在你自己的终端里，选择 `JetBrainsMono Nerd Font` 或其他 Nerd Font。
+
 ## 你自己的配置
 
 使用 `--no-nvim` 或 `--no-tmux-config` 时，f0 仍然会构建相同的布局，但用 `Ctrl-h/j/k/l` 在窗格之间移动取决于你的配置。参见[快捷键](/zh-cn/reference/keybindings/#使用你自己的配置)。
@@ -103,4 +109,4 @@ f0.app 是 f0 自己的终端，所以无论你平时用什么终端，它的快
 
 ## 卸载
 
-删除 `/Applications/f0.app` 和 `~/.config/f0/ghostty.conf`，删除 `~/.config` 中的链接（`nvim`、`tmux`、`ghostty/config`、`ghostty/themes/f0-light`、`ghostty/themes/f0-dark`），如果想恢复之前的配置，就还原 `.bak.*` 目录，然后运行 `cargo uninstall f0`。在没有其他程序使用时，用 `brew uninstall treehouse` 卸载 treehouse；如果 Rust 是安装脚本添加的，用 `brew uninstall rust` 卸载它。
+删除 `/Applications/f0.app` 和 `~/.config/f0/ghostty.conf`，删除 `~/.config` 中的链接（`nvim`、`tmux`、`ghostty/config`、`ghostty/themes/f0-light`、`ghostty/themes/f0-dark`），如果想恢复之前的配置，就还原 `.bak.*` 目录，然后运行 `cargo uninstall f0`。在没有其他程序使用时，用 `brew uninstall treehouse` 卸载 treehouse；如果 Rust 是安装脚本添加的，用 `brew uninstall rust` 卸载它。字体用 `brew uninstall --cask font-jetbrains-mono-nerd-font` 卸载。

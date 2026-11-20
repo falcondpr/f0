@@ -33,7 +33,7 @@ El instalador agrega [treehouse](#treehouse) y Rust, que compila la CLI, si falt
    ~/dev/f0/install.sh
    ```
 
-   Instala tmux, treehouse, Neovim, ripgrep, fd y Ghostty, enlaza las configuraciones incluidas en `~/.config` y crea [f0.app](#f0app).
+   Instala tmux, treehouse, Neovim, ripgrep, fd, Ghostty y la [tipografía](#tipografía), enlaza las configuraciones incluidas en `~/.config` y crea [f0.app](#f0app).
 
    </TabItem>
    <TabItem label="Conservar mis configuraciones">
@@ -65,8 +65,8 @@ El instalador agrega [treehouse](#treehouse) y Rust, que compila la CLI, si falt
 |---|---|
 | `--no-nvim` | Conserva tu configuración de Neovim (tampoco instala Neovim, ripgrep ni fd) |
 | `--no-tmux-config` | Conserva tu configuración de tmux |
-| `--no-ghostty` | Conserva tu configuración de Ghostty. f0.app igual instala Ghostty, y nunca lee esa configuración |
-| `--no-app` | No crea f0.app |
+| `--no-ghostty` | Conserva tu configuración de Ghostty. f0.app igual instala Ghostty y la tipografía, y nunca lee esa configuración |
+| `--no-app` | No crea f0.app. Sin ella y con `--no-ghostty`, tampoco se instala la tipografía |
 | `--cli-only` | Equivale a las cuatro opciones anteriores |
 | `--yes` | Reemplaza las configuraciones existentes sin preguntar |
 
@@ -95,6 +95,12 @@ edita `config/ghostty/f0.conf` en el repositorio y vuelve a ejecutar el instalad
 
 La primera vez que el launcher busca repositorios en tu Escritorio o en Documentos, macOS pregunta si f0 puede leerlos.
 
+## Tipografía
+
+f0.app y la configuración de Ghostty incluida usan [JetBrainsMono Nerd Font](https://github.com/ryanoasis/nerd-fonts): JetBrains Mono con sus ligaduras y los íconos Nerd Font que dibujan el launcher y Neovim. El instalador la agrega con Homebrew (`font-jetbrains-mono-nerd-font`), salvo que ya haya una copia en `~/Library/Fonts` o `/Library/Fonts`. `f0 doctor` avisa cuando falta.
+
+Sin la tipografía, Ghostty usa otra monoespaciada y los íconos se ven como cuadros vacíos. En tu propia terminal, elige `JetBrainsMono Nerd Font` u otra Nerd Font.
+
 ## Tus propias configuraciones
 
 Con `--no-nvim` o `--no-tmux-config`, f0 arma el mismo layout, pero moverte entre paneles con `Ctrl-h/j/k/l` depende de tus configuraciones. Mira [Atajos](/es/reference/keybindings/#con-tus-propias-configuraciones).
@@ -105,4 +111,4 @@ Cada tarea de f0 corre en su propio worktree de treehouse, así que treehouse es
 
 ## Desinstalar
 
-Borra `/Applications/f0.app` y `~/.config/f0/ghostty.conf`, borra los enlaces de `~/.config` (`nvim`, `tmux`, `ghostty/config`, `ghostty/themes/f0-light`, `ghostty/themes/f0-dark`), restaura las carpetas `.bak.*` si quieres recuperar tus configuraciones anteriores y ejecuta `cargo uninstall f0`. Desinstala treehouse con `brew uninstall treehouse`, y Rust con `brew uninstall rust` si lo agregó el instalador, cuando nada más los use.
+Borra `/Applications/f0.app` y `~/.config/f0/ghostty.conf`, borra los enlaces de `~/.config` (`nvim`, `tmux`, `ghostty/config`, `ghostty/themes/f0-light`, `ghostty/themes/f0-dark`), restaura las carpetas `.bak.*` si quieres recuperar tus configuraciones anteriores y ejecuta `cargo uninstall f0`. Desinstala treehouse con `brew uninstall treehouse`, y Rust con `brew uninstall rust` si lo agregó el instalador, cuando nada más los use. La tipografía se quita con `brew uninstall --cask font-jetbrains-mono-nerd-font`.
