@@ -233,7 +233,7 @@ Revisa herramientas, valores globales, proyectos, las teclas de tmux y lo que im
 | Comandos de editor y agente de los valores globales y de cada proyecto | Sí |
 | `repo` y archivo de includes de cada proyecto | Sí |
 | El servidor de tmux en ejecución define las teclas que cierran una tarea y arrancan otro agente (se omite sin servidor, o para una tecla en `false`) | Sí |
-| `gh`, `rg`, Ghostty | No |
+| `gh`, `rg`, Ghostty, JetBrainsMono Nerd Font | No |
 | `/Applications/f0.app`, distinguiéndola de otra app con ese nombre, y su configuración `~/.config/f0/ghostty.conf` | No |
 | Con la config de tmux incluida enlazada: tmux 3.8 o posterior, que el tema necesita | Sí |
 | Con la config de Ghostty incluida enlazada: ninguna línea `background`, `foreground`, `palette`, `cursor-*` o `selection-*` en otros archivos de config de Ghostty, que se listan con su archivo y línea | No |

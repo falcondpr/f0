@@ -233,7 +233,7 @@ Check tools, global defaults, project configs, the tmux keys and what keeps the 
 | Editor and agent commands of the defaults and each project | Yes |
 | Each project's `repo` and worktree include file | Yes |
 | The running tmux server binds the keys that close a task and start another agent (skipped with no server, or for a key set to `false`) | Yes |
-| `gh`, `rg`, Ghostty | No |
+| `gh`, `rg`, Ghostty, JetBrainsMono Nerd Font | No |
 | `/Applications/f0.app`, telling it from another app with that name, and its config `~/.config/f0/ghostty.conf` | No |
 | With the bundled tmux config linked: tmux 3.8 or later, which the theme needs | Yes |
 | With the bundled Ghostty config linked: no `background`, `foreground`, `palette`, `cursor-*` or `selection-*` lines in other Ghostty config files, listed with their file and line | No |

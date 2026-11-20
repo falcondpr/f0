@@ -233,7 +233,7 @@ f0 keys
 | 默认值和每个项目中的编辑器与智能体命令 | 是 |
 | 每个项目的 `repo` 和 worktree include 文件 | 是 |
 | 正在运行的 tmux 服务器绑定了关闭任务和启动另一个智能体的按键（没有服务器，或某个按键设为 `false` 时跳过） | 是 |
-| `gh`、`rg`、Ghostty | 否 |
+| `gh`、`rg`、Ghostty、JetBrainsMono Nerd Font | 否 |
 | `/Applications/f0.app`（会区分同名的其他应用）及其配置 `~/.config/f0/ghostty.conf` | 否 |
 | 链接了内置 tmux 配置时：tmux 3.8 或更高版本，主题需要它 | 是 |
 | 链接了内置 Ghostty 配置时：其他 Ghostty 配置文件中没有 `background`、`foreground`、`palette`、`cursor-*` 或 `selection-*` 行，有的话会列出其文件和行号 | 否 |
