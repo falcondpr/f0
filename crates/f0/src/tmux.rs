@@ -186,6 +186,23 @@ pub fn server_running() -> bool {
     tmux(&["list-sessions"]).is_ok()
 }
 
+/// Runs `script` (config/tmux/appearance.sh) on the running server right away, instead
+/// of on its next status refresh. Unsetting `@f0-appearance` makes it repaint even when
+/// it believes nothing changed.
+pub fn refresh_appearance(script: &Path) -> Result<(), F0Error> {
+    let script = shell_quote(&script.to_string_lossy());
+    tmux(&[
+        "set-option",
+        "-gu",
+        "@f0-appearance",
+        ";",
+        "run-shell",
+        "-b",
+        &script,
+    ])
+    .map(drop)
+}
+
 /// The key tmux waits for before a bound key, like `C-a`.
 pub fn prefix() -> Result<String, F0Error> {
     tmux(&["show-options", "-gv", "prefix"])
@@ -413,7 +430,8 @@ pub fn create_session(name: &str, worktree: &Path, layout: &Layout) -> Result<()
         // Agents like Claude Code retitle their pane with escape sequences; the title
         // f0 sets is what tells the panes apart. tmux before 3.4 lacks the option.
         let _ = tmux(&["set-option", "-p", "-t", id, "allow-set-title", "off"]);
-        tmux(&["select-pane", "-t", id, "-T", &pane.title])?;
+        // Uppercase like the panel titles of an editor; tmux formats cannot change case.
+        tmux(&["select-pane", "-t", id, "-T", &pane.title.to_uppercase()])?;
         // Ctrl-d at an empty prompt would otherwise close the pane and collapse the
         // layout; `kill-pane` still closes it on purpose. `pane-died` only fires on panes
         // that remain on exit.

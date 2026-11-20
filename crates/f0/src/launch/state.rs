@@ -4,6 +4,8 @@
 
 use std::path::PathBuf;
 
+use crate::appearance::Mode;
+
 /// The keys the launcher tells apart, independent of the terminal library.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Key {
@@ -113,6 +115,8 @@ pub enum Action {
     Edit(String),
     /// Check the setup, like `f0 doctor`.
     Doctor,
+    /// Save and apply the light or dark mode the workspace uses.
+    Appearance(Mode),
     /// Close the session of the task in this slot and keep the slot, like `f0 stop`.
     Stop(PathBuf),
     /// Close the task in this slot and return the slot, like `f0 done`.
@@ -139,6 +143,8 @@ pub struct State {
     pub busy: Option<String>,
     /// Advances while busy, to animate the spinner.
     pub tick: usize,
+    /// The light or dark mode, which `t` cycles on the projects screen.
+    pub appearance: Mode,
 }
 
 impl State {
@@ -157,6 +163,7 @@ impl State {
             columns: 1,
             busy: None,
             tick: 0,
+            appearance: Mode::System,
         }
     }
 
@@ -300,6 +307,10 @@ impl State {
             }
             Key::Char('e') => return self.edit(),
             Key::Char('d') if self.screen == Screen::Projects => return Action::Doctor,
+            Key::Char('t') if self.screen == Screen::Projects => {
+                self.appearance = self.appearance.next();
+                return Action::Appearance(self.appearance);
+            }
             Key::Char('c') if matches!(self.screen, Screen::Tasks { .. }) => return self.stop(),
             Key::Char('x') if matches!(self.screen, Screen::Tasks { .. }) => self.ask_done(),
             _ => {}
@@ -790,6 +801,12 @@ mod tests {
         state.handle(Key::Right);
         assert_eq!(state.handle(Key::Char('e')), Action::Edit("web".to_owned()));
         assert_eq!(state.handle(Key::Char('d')), Action::Doctor);
+        assert_eq!(
+            state.handle(Key::Char('t')),
+            Action::Appearance(Mode::Light)
+        );
+        assert_eq!(state.handle(Key::Char('t')), Action::Appearance(Mode::Dark));
+        assert_eq!(state.appearance, Mode::Dark);
         assert_eq!(
             state.handle(Key::Char('s')),
             Action::None,

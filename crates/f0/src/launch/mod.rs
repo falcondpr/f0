@@ -16,9 +16,10 @@ use crossterm::{cursor, execute};
 use ratatui::Terminal;
 use ratatui::backend::CrosstermBackend;
 
+use crate::appearance::{self, Mode};
 use crate::config::{self, Launch, Project};
 use crate::tmux::{self, Attach, Session};
-use crate::{commands, edit, init, process};
+use crate::{commands, edit, init};
 use state::{Action, Key, ProjectItem, RepoItem, State, TaskItem};
 use view::Palette;
 
@@ -86,8 +87,11 @@ impl App {
 
 fn run_loop(mut state: State, mut app: Option<App>) -> anyhow::Result<()> {
     install_panic_hook();
+    let mode_file = appearance::mode_file(&config::config_dir()?);
+    state.appearance = appearance::read_mode(&mode_file);
     let mut term = enter()?;
-    let mut palette = Palette::new(macos_dark());
+    paint_terminal(state.appearance)?;
+    let mut palette = Palette::new(state.appearance.is_dark());
     if let Some(app) = &app {
         let items = busy(
             &mut term,
@@ -118,8 +122,11 @@ fn run_loop(mut state: State, mut app: Option<App>) -> anyhow::Result<()> {
                     continue;
                 };
                 perform(action, &mut state, app, &mut term, palette)?;
-                // The appearance may have changed while a session had the terminal.
-                palette = Palette::new(macos_dark());
+                // The appearance may have changed while a session had the terminal, or
+                // in another f0 window.
+                state.appearance = appearance::read_mode(&mode_file);
+                paint_terminal(state.appearance)?;
+                palette = Palette::new(state.appearance.is_dark());
             }
         }
     }
@@ -245,9 +252,51 @@ fn perform(
                 wait_for_enter("Press Enter to go back to f0.");
             })?;
         }
+        Action::Appearance(mode) => {
+            if let Err(e) = apply_appearance(mode, &app.config_dir) {
+                state.error(format!("Could not change the theme: {e:#}"));
+            }
+        }
         Action::None | Action::Quit | Action::Switch(_) => {}
     }
     Ok(())
+}
+
+/// Saves `mode` where config/tmux/appearance.sh and Neovim read it, and has tmux repaint
+/// its panes now; Neovim and the agent follow within a few seconds.
+fn apply_appearance(mode: Mode, config_dir: &Path) -> anyhow::Result<()> {
+    appearance::write_mode(&appearance::mode_file(config_dir), mode)?;
+    let script = config::xdg_config_home()?.join("tmux/appearance.sh");
+    if script.is_file() && tmux::server_running() {
+        tmux::refresh_appearance(&script)?;
+    }
+    Ok(())
+}
+
+/// Gives the terminal around the launcher the colors of `mode`, so its margin, titlebar
+/// and cursor match the panes tmux paints; `System` hands them back to the terminal's
+/// own theme, which follows macOS. Inside tmux the sequences would recolor a pane
+/// instead, so they are left out there.
+fn paint_terminal(mode: Mode) -> io::Result<()> {
+    if std::env::var_os("TMUX").is_some() {
+        return Ok(());
+    }
+    let sequences = match mode {
+        Mode::System => "\x1b]110\x1b\\\x1b]111\x1b\\\x1b]112\x1b\\".to_owned(),
+        Mode::Light | Mode::Dark => {
+            let (text, background) = if mode.is_dark() {
+                ("d4/d4/d4", "1f/1f/1f")
+            } else {
+                ("1f/1f/1f", "ff/ff/ff")
+            };
+            format!(
+                "\x1b]10;rgb:{text}\x1b\\\x1b]11;rgb:{background}\x1b\\\x1b]12;rgb:{text}\x1b\\"
+            )
+        }
+    };
+    let mut out = io::stdout();
+    out.write_all(sequences.as_bytes())?;
+    out.flush()
 }
 
 /// Keeps output on screen until Enter, before the launcher takes the terminal back.
@@ -391,12 +440,6 @@ fn require_terminal() -> anyhow::Result<()> {
         bail!("this command shows a full-screen list, so it needs a terminal");
     }
     Ok(())
-}
-
-/// Whether macOS uses the dark appearance; anywhere else, light.
-fn macos_dark() -> bool {
-    process::output("defaults", ["read", "-g", "AppleInterfaceStyle"], None)
-        .is_ok_and(|style| style == "Dark")
 }
 
 fn now() -> u64 {

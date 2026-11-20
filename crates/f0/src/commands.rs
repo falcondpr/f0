@@ -813,13 +813,30 @@ fn report_done_key(key: Option<&str>) -> anyhow::Result<u32> {
 fn report_appearance() -> anyhow::Result<u32> {
     let home = config::home_dir()?;
     let xdg = config::xdg_config_home()?;
-    if !appearance::is_bundled(&xdg.join("tmux"), Path::new("config/tmux")) {
+    let tmux = appearance::is_bundled(&xdg.join("tmux"), Path::new("config/tmux"));
+    let ghostty = appearance::is_bundled(
+        &xdg.join("ghostty/config"),
+        Path::new("config/ghostty/config"),
+    );
+    if !tmux && !ghostty {
         return Ok(0);
     }
     println!("\nAppearance");
+    let mut problems = 0;
+    if tmux {
+        problems += report_tmux_theme();
+    }
+    if ghostty {
+        problems += report_ghostty_themes(&xdg);
+        report_ghostty_colors(&home, &xdg);
+    }
+    Ok(problems)
+}
+
+fn report_tmux_theme() -> u32 {
     let (min_major, min_minor) = appearance::MIN_TMUX;
     let version = process::output("tmux", ["-V"], None).unwrap_or_default();
-    let problems = match appearance::tmux_version(&version) {
+    match appearance::tmux_version(&version) {
         Some(found) if found >= appearance::MIN_TMUX => {
             report(&format!("`{version}` has the theme options"), true, true)
         }
@@ -835,15 +852,25 @@ fn report_appearance() -> anyhow::Result<u32> {
             false,
             false,
         ),
-    };
-
-    if appearance::is_bundled(
-        &xdg.join("ghostty/config"),
-        Path::new("config/ghostty/config"),
-    ) {
-        report_ghostty_colors(&home, &xdg);
     }
-    Ok(problems)
+}
+
+/// The bundled Ghostty config names the f0 themes, which install.sh links next to it;
+/// a repo updated without running install.sh again lacks them, and Ghostty then falls
+/// back to its default colors.
+fn report_ghostty_themes(xdg: &Path) -> u32 {
+    let missing = appearance::missing_ghostty_themes(&xdg.join("ghostty/themes"));
+    if missing.is_empty() {
+        return report("Ghostty has the f0 themes", true, true);
+    }
+    report(
+        &format!(
+            "Ghostty lacks the themes {}, run install.sh again",
+            missing.join(", ")
+        ),
+        false,
+        true,
+    )
 }
 
 /// Colors set in another Ghostty config file win over the bundled theme around tmux.
