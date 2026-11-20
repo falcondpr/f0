@@ -60,11 +60,12 @@ const AGENT: usize = 2;
 /// `resume` starts the agent with its resume command, when it has one, falling back to
 /// a fresh start.
 pub fn build(project: &Project, worktree: &Path, start: &[String], resume: bool) -> Layout {
+    let start_agent = project.agent.start_cmd();
     let agent = match project.agent.resume_cmd().filter(|_| resume) {
         // Resume commands fail when there is nothing to resume, like `claude --continue`
         // in a worktree without conversations; the agent then starts fresh.
-        Some(resume) => format!("{resume} || {}", project.agent.cmd),
-        None => project.agent.cmd.clone(),
+        Some(resume) => format!("{resume} || {start_agent}"),
+        None => start_agent.clone(),
     };
 
     let terminals = usize::from(project.layout.terminals);
@@ -84,7 +85,7 @@ pub fn build(project: &Project, worktree: &Path, start: &[String], resume: bool)
             command: Some(agent),
             run: true,
             // Leaving the agent and its shell is a request for a fresh one, not a resume.
-            restart: Some(project.agent.cmd.clone()),
+            restart: Some(start_agent),
         },
     ];
 
@@ -162,6 +163,8 @@ mod tests {
     use super::*;
     use crate::config::Defaults;
 
+    const CLAUDE: &str = r#"claude --settings '{"theme":"auto"}'"#;
+
     fn project(source: &str) -> Project {
         Project::from_toml(
             "hubi",
@@ -203,7 +206,7 @@ mod tests {
             ]
         );
         assert_eq!(layout.panes[0].command.as_deref(), Some("nvim ."));
-        assert_eq!(layout.panes[2].command.as_deref(), Some("claude"));
+        assert_eq!(layout.panes[2].command.as_deref(), Some(CLAUDE));
         assert_eq!(
             layout.panes[3].cwd,
             PathBuf::from("/pool/1/hubi/apps/mobile")
@@ -255,10 +258,10 @@ mod tests {
     fn resume_starts_the_agent_where_it_left_off() {
         let project = project(r#"repo = "/src/hubi""#);
         let agent = |resume| build(&project, Path::new("/w"), &[], resume).panes[AGENT].clone();
-        assert_eq!(agent(false).command.as_deref(), Some("claude"));
+        assert_eq!(agent(false).command.as_deref(), Some(CLAUDE));
         assert_eq!(
-            agent(true).command.as_deref(),
-            Some("claude --continue || claude")
+            agent(true).command,
+            Some(format!("{CLAUDE} --continue || {CLAUDE}"))
         );
         assert_eq!(agent(true).title, "agent: claude");
 
@@ -293,7 +296,7 @@ mod tests {
             [
                 Some("nvim .".to_owned()),
                 Some("a".to_owned()),
-                Some("claude".to_owned()),
+                Some(CLAUDE.to_owned()),
                 Some("b".to_owned()),
                 None,
                 None
