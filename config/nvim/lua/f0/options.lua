@@ -9,8 +9,10 @@ opt.wildignore:append({
   "*/android/build/*",
 })
 
-opt.number = true
-opt.relativenumber = true
+-- Sin números de línea: `<leader>un` los muestra (relativos) para los movimientos con
+-- cuenta. El modo lo indica la forma del cursor (`guicursor`) y la statusline.
+opt.number = false
+opt.relativenumber = false
 opt.scrolloff = 8
 
 -- Las lineas largas no se parten: siguen de largo y la ventana scrollea en horizontal
@@ -28,7 +30,12 @@ opt.fillchars = { eob = " ", diff = " ", vert = " ", horiz = " ", horizup = " ",
 opt.laststatus = 3
 -- Sin tabline: diffview abre su propia pestaña y la barra solo repetiría los nombres
 opt.showtabline = 0
-opt.showmode = false -- lo muestra lualine
+opt.showmode = false -- lo muestra la statusline (f0/statusline.lua)
+
+-- Guías de indentación nativas: `list` con un `▏` por nivel en el tono de `Whitespace`.
+-- `leadmultispace` depende del ancho de indentación de cada buffer, ver f0/autocmds.lua.
+opt.list = true
+opt.listchars = { tab = "  ", nbsp = "␣", leadmultispace = "▏ " }
 
 opt.signcolumn = "yes"
 opt.expandtab = true

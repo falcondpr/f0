@@ -1,5 +1,12 @@
 local map = vim.keymap.set
 
+-- Los números van apagados; relativos sirven para movimientos con cuenta (`5j`).
+map("n", "<leader>un", function()
+  local on = not vim.wo.relativenumber
+  vim.wo[0][0].number = on
+  vim.wo[0][0].relativenumber = on
+end, { desc = "Números de línea" })
+
 map("n", "<S-l>", "<cmd>bnext<cr>", { desc = "Buffer siguiente" })
 map("n", "<S-h>", "<cmd>bprevious<cr>", { desc = "Buffer anterior" })
 map("n", "<leader>bd", function()

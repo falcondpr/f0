@@ -37,9 +37,12 @@ const STOPPED: &str = "○";
 const BRANCH: &str = "\u{e0a0}";
 const GIT: &str = "\u{e702}";
 
-/// Catppuccin colors for the launcher, Latte or Mocha like the bundled configs.
-#[derive(Debug, Clone, Copy, PartialEq)]
+/// The f0 palette for the launcher, light or dark like the bundled configs.
+#[derive(Debug, Clone, Copy)]
 pub struct Palette {
+    /// Painted under everything, so the launcher keeps its mode even when the terminal
+    /// was not told about it.
+    pub background: Color,
     /// Only the selected card uses it.
     pub accent: Color,
     pub text: Color,
@@ -54,24 +57,24 @@ pub struct Palette {
 impl Palette {
     pub fn new(dark: bool) -> Self {
         if dark {
-            // Mocha: peach, text, subtext0, overlay0, green, red.
             Self {
-                accent: Color::Rgb(0xfa, 0xb3, 0x87),
-                text: Color::Rgb(0xcd, 0xd6, 0xf4),
-                muted: Color::Rgb(0xa6, 0xad, 0xc8),
-                faint: Color::Rgb(0x6c, 0x70, 0x86),
-                running: Color::Rgb(0xa6, 0xe3, 0xa1),
-                error: Color::Rgb(0xf3, 0x8b, 0xa8),
+                background: Color::Rgb(0x1f, 0x1f, 0x1f),
+                accent: Color::Rgb(0x4d, 0xaa, 0xfc),
+                text: Color::Rgb(0xd4, 0xd4, 0xd4),
+                muted: Color::Rgb(0xa8, 0xa8, 0xa8),
+                faint: Color::Rgb(0x73, 0x73, 0x73),
+                running: Color::Rgb(0x8c, 0xc2, 0x65),
+                error: Color::Rgb(0xf1, 0x4c, 0x4c),
             }
         } else {
-            // Latte: peach, text, subtext0, overlay0, green, red.
             Self {
-                accent: Color::Rgb(0xfe, 0x64, 0x0b),
-                text: Color::Rgb(0x4c, 0x4f, 0x69),
-                muted: Color::Rgb(0x6c, 0x6f, 0x85),
-                faint: Color::Rgb(0x9c, 0xa0, 0xb0),
-                running: Color::Rgb(0x40, 0xa0, 0x2b),
-                error: Color::Rgb(0xd2, 0x0f, 0x39),
+                background: Color::Rgb(0xff, 0xff, 0xff),
+                accent: Color::Rgb(0x00, 0x5f, 0xb8),
+                text: Color::Rgb(0x1f, 0x1f, 0x1f),
+                muted: Color::Rgb(0x6e, 0x6e, 0x6e),
+                faint: Color::Rgb(0xa8, 0xa8, 0xa8),
+                running: Color::Rgb(0x3d, 0x7a, 0x1f),
+                error: Color::Rgb(0xc7, 0x2e, 0x2e),
             }
         }
     }
@@ -112,6 +115,10 @@ struct Card {
 /// Draws `state` on the whole frame. `now` dates the last use of the tasks.
 pub fn draw(frame: &mut Frame, state: &State, palette: Palette, now: u64) {
     let area = frame.area();
+    frame.render_widget(
+        Block::new().style(Style::new().bg(palette.background)),
+        area,
+    );
     let column = Rect {
         x: area.x + 2.min(area.width),
         width: grid_width(area.width).min(area.width),
@@ -524,6 +531,10 @@ pub fn hints(state: &State) -> Vec<(&'static str, &'static str)> {
         }
     }
     hints.extend([("/", "filter"), ("q", "quit")]);
+    // Seldom used, so a narrow window drops it first.
+    if state.screen == Screen::Projects {
+        hints.push(("t", state.appearance.hint()));
+    }
     hints
 }
 

@@ -1,27 +1,38 @@
 #!/bin/sh
-# Paints the panes with the Catppuccin colours of the macOS appearance: background,
+# Paints the panes with the f0 colours of the macOS appearance: background,
 # text and the 16 ANSI colours. Shells and the agent then match Neovim in any terminal,
 # whatever colours the terminal itself has. It also forces tmux's own theme, because
 # terminals that do not report theirs (like WezTerm) never switch it.
 #
+# A mode picked in the f0 launcher (`t`), saved as `light` or `dark` in
+# ~/.config/f0/appearance, wins over the macOS appearance.
+#
 # tmux runs it often (see tmux.conf), so it only writes when the appearance changed.
-# Without `defaults` (not macOS) it does nothing and tmux keeps `theme detect`.
+# Without a picked mode or `defaults` (not macOS) it does nothing and tmux keeps
+# `theme detect`.
 
-[ -x /usr/bin/defaults ] || exit 0
-case "$(/usr/bin/defaults read -g AppleInterfaceStyle 2>/dev/null)" in
-  Dark) mode=dark ;;
-  *) mode=light ;;
+picked="$(cat "${F0_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/f0}/appearance" 2>/dev/null)"
+case "$picked" in
+  light | dark) mode="$picked" ;;
+  *)
+    [ -x /usr/bin/defaults ] || exit 0
+    case "$(/usr/bin/defaults read -g AppleInterfaceStyle 2>/dev/null)" in
+      Dark) mode=dark ;;
+      *) mode=light ;;
+    esac
+    ;;
 esac
 [ "$(tmux show-options -gqv @f0-appearance)" = "$mode" ] && exit 0
 
+# The same values as config/ghostty/themes/f0-dark and f0-light.
 if [ "$mode" = dark ]; then
-  fg="#cdd6f4" bg="#1e1e2e"
-  palette="#45475a #f38ba8 #a6e3a1 #f9e2af #89b4fa #f5c2e7 #94e2d5 #a6adc8
-    #585b70 #f37799 #89d88b #ebd391 #74a8fc #f2aede #6bd7ca #bac2de"
+  fg="#d4d4d4" bg="#1f1f1f"
+  palette="#3a3a3a #f14c4c #8cc265 #d7ba7d #4daafc #c586c0 #4ec9b0 #b0b0b0
+    #767676 #ff6b6b #a4d68a #e5cc95 #75beff #d6a2d2 #6fd8c4 #e0e0e0"
 else
-  fg="#4c4f69" bg="#eff1f5"
-  palette="#5c5f77 #d20f39 #40a02b #df8e1d #1e66f5 #ea76cb #179299 #acb0be
-    #6c6f85 #de293e #49af3d #eea02d #456eff #fe85d8 #2d9fa8 #bcc0cc"
+  fg="#1f1f1f" bg="#ffffff"
+  palette="#3b3b3b #c72e2e #3d7a1f #8a6a00 #005fb8 #af00db #0f7a8a #a0a0a0
+    #6e6e6e #e04848 #4f9a2c #a67f00 #2a7fd4 #c13fe0 #1a8fa0 #c4c4c4"
 fi
 
 set -- set-option -g theme "$mode" \; set-option -g window-style "fg=$fg,bg=$bg"

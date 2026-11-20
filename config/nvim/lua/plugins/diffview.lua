@@ -20,6 +20,9 @@ return {
   },
   opts = {
     enhanced_diff_hl = true,
+    -- Sin íconos de archivo, como neo-tree: las carpetas con la misma flecha simple.
+    use_icons = false,
+    icons = { folder_closed = "›", folder_open = "⌄" },
     view = {
       default = { layout = "diff2_horizontal" },
     },

@@ -66,6 +66,7 @@ local function update(win)
     wo.number = false
     wo.relativenumber = false
     wo.signcolumn = "no"
+    wo.cursorline = false
     render(win, buf)
   else
     vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
@@ -75,6 +76,7 @@ local function update(win)
       wo.number = vim.go.number
       wo.relativenumber = vim.go.relativenumber
       wo.signcolumn = vim.go.signcolumn
+      wo.cursorline = win == vim.api.nvim_get_current_win()
     end
   end
 end

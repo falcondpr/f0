@@ -194,14 +194,38 @@ impl Agent {
         program.rsplit('/').next().unwrap_or(program)
     }
 
+    /// What the agent pane runs for a fresh start.
+    pub fn start_cmd(&self) -> String {
+        self.with_theme(&self.cmd)
+    }
+
     /// `resume`, or `--continue` for Claude Code, which keeps conversations per folder:
     /// every task has its own worktree, so it always finds that task's conversation.
     pub fn resume_cmd(&self) -> Option<String> {
         self.resume
             .clone()
             .or_else(|| (self.program() == "claude").then(|| format!("{} --continue", self.cmd)))
+            .map(|cmd| self.with_theme(&cmd))
+    }
+
+    /// Claude Code keeps one theme in the user's settings, so in dark mode a light theme
+    /// would sit on the dark panes. `auto` follows the pane background, which tmux
+    /// paints with the macOS appearance, and only in f0: the flag outranks the user's
+    /// settings for this run without touching them. A `--settings` of the user's own
+    /// wins.
+    fn with_theme(&self, cmd: &str) -> String {
+        if self.program() != "claude" || cmd.contains("--settings") {
+            return cmd.to_owned();
+        }
+        let cmd = cmd.trim();
+        match cmd.split_once(char::is_whitespace) {
+            Some((program, args)) => format!("{program} {CLAUDE_AUTO_THEME} {}", args.trim_start()),
+            None => format!("{cmd} {CLAUDE_AUTO_THEME}"),
+        }
     }
 }
+
+const CLAUDE_AUTO_THEME: &str = r#"--settings '{"theme":"auto"}'"#;
 
 impl Default for Agent {
     fn default() -> Self {
@@ -1097,7 +1121,7 @@ mod tests {
     fn claude_resumes_by_default_and_other_agents_only_when_set() {
         assert_eq!(
             Agent::new("claude --model opus").resume_cmd().as_deref(),
-            Some("claude --model opus --continue")
+            Some(r#"claude --settings '{"theme":"auto"}' --model opus --continue"#)
         );
         assert_eq!(Agent::new("codex").resume_cmd(), None);
 
@@ -1107,6 +1131,26 @@ mod tests {
         assert_eq!(
             project.agent.resume_cmd().as_deref(),
             Some("codex resume --last")
+        );
+    }
+
+    #[test]
+    fn claude_follows_the_pane_background_unless_the_user_sets_its_settings() {
+        assert_eq!(
+            Agent::new("claude").start_cmd(),
+            r#"claude --settings '{"theme":"auto"}'"#
+        );
+        assert_eq!(
+            Agent::new("/opt/bin/claude  --model opus").start_cmd(),
+            r#"/opt/bin/claude --settings '{"theme":"auto"}' --model opus"#
+        );
+        assert_eq!(
+            Agent::new("claude --settings ~/my.json").start_cmd(),
+            "claude --settings ~/my.json"
+        );
+        assert_eq!(
+            Agent::new("codex --full-auto").start_cmd(),
+            "codex --full-auto"
         );
     }
 
