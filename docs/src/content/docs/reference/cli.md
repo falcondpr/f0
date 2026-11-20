@@ -19,7 +19,7 @@ Show f0's home screen: your projects, then the tasks of the one you pick. [f0.ap
 f0 launch
 ```
 
-Projects and tasks show as cards, with the selected one outlined in the accent color. A project card counts its tasks; a task card shows its branch and whether it is running (`●`, with when you last used it) or stopped (`○`: the slot is leased, without a session). See [Key bindings](/reference/keybindings/#launcher) for every key.
+Projects and tasks show as a table under a search box, with the selected row in the accent color. A project row counts its tasks; a task row shows its branch, whether it is running (`●`) or stopped (`○`: the slot is leased, without a session), and when you last used it. The bottom of the table counts the rows and how many the search keeps. See [Key bindings](/reference/keybindings/#launcher) for every key.
 
 - **Enter on a task** opens it like `f0 open` and attaches to its session. Leaving the session, by detaching (`Ctrl-a d`), with `f0 stop` or with `f0 done`, brings back the task list of that project, refreshed; Esc goes up to the projects.
 - **`n`** asks for a ticket and starts the task like `f0 new`.
@@ -179,7 +179,7 @@ treehouse numbers slots per repository, so the same number shows up in several p
 
 ## f0 switch
 
-Pick an f0 session from cards like those of [`f0 launch`](#f0-launch), most recently used first, and switch to it. Inside tmux it switches the current client; outside, it attaches. Enter switches, `/` filters, and Esc or `q` leaves without switching.
+Pick an f0 session from a table like that of [`f0 launch`](#f0-launch), most recently used first, and switch to it. Inside tmux it switches the current client; outside, it attaches. Enter switches, `/` searches, and Esc or `q` leaves without switching.
 
 ## f0 stop
 

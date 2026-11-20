@@ -78,14 +78,14 @@ struct App {
     refresh: Option<Refresh>,
 }
 
-/// A background reload of the projects and the tasks of `project`, which `treehouse
-/// status` makes slow: about a second per project.
+/// A background reload of the tasks of `project` and of the projects, which `treehouse
+/// status` makes slow: up to a second or two per project. Each shows as soon as it is
+/// done, so the tasks do not wait for every project.
 struct Refresh {
     project: String,
-    job: JoinHandle<Refreshed>,
+    tasks: Option<JoinHandle<anyhow::Result<Vec<TaskItem>>>>,
+    projects: Option<JoinHandle<Vec<ProjectItem>>>,
 }
-
-type Refreshed = (anyhow::Result<Vec<TaskItem>>, Vec<ProjectItem>);
 
 impl App {
     fn reload_projects(&mut self) -> anyhow::Result<()> {
@@ -120,8 +120,6 @@ fn run_loop(mut state: State, mut app: Option<App>) -> anyhow::Result<()> {
         if let Some(app) = app.as_mut() {
             apply_refresh(&mut state, app);
         }
-        let width = term.size()?.width;
-        state.set_columns(view::columns_for(view::grid_width(width)));
         term.draw(|frame| view::draw(frame, &state, palette, now()))?;
         // While a reload runs, wake up now and then to show it; keys work meanwhile.
         let refreshing = app.as_ref().is_some_and(|app| app.refresh.is_some());
@@ -255,6 +253,9 @@ fn perform(
             let target = slot.to_string_lossy().into_owned();
             // treehouse asks here before discarding uncommitted changes.
             let result = suspended(term, || commands::done(Some(&target), false))?;
+            if result.is_ok() {
+                state.remove_task(&slot);
+            }
             after_session(state, app, result);
         }
         Action::Edit(name) => {
@@ -356,32 +357,43 @@ fn after_session(state: &mut State, app: &mut App, result: anyhow::Result<()>) {
     // A newer reload replaces an older one, whose thread finishes unheard.
     app.refresh = app.project(&project).cloned().map(|current| {
         let (projects, home) = (app.projects.clone(), app.home.clone());
-        let job = std::thread::spawn(move || (tasks_of(&current), project_items(&projects, &home)));
-        Refresh { project, job }
+        Refresh {
+            project,
+            tasks: Some(std::thread::spawn(move || tasks_of(&current))),
+            projects: Some(std::thread::spawn(move || project_items(&projects, &home))),
+        }
     });
 }
 
-/// Shows the reload once it is done. The tasks only replace the list when it is still
-/// that project's.
+/// Shows each half of the reload once it is done. The tasks only replace the list when
+/// it is still that project's.
 fn apply_refresh(state: &mut State, app: &mut App) {
-    if !app.refresh.as_ref().is_some_and(|r| r.job.is_finished()) {
-        return;
-    }
-    let Some(refresh) = app.refresh.take() else {
+    let Some(refresh) = app.refresh.as_mut() else {
         return;
     };
-    let showing =
-        matches!(&state.screen, state::Screen::Tasks { project } if *project == refresh.project);
-    let (tasks, projects) = match refresh.job.join() {
-        Ok(refreshed) => refreshed,
-        Err(panic) => std::panic::resume_unwind(panic),
-    };
-    state.set_projects(projects, None);
-    match tasks {
-        Ok(tasks) if showing => state.set_tasks(tasks),
-        Err(e) if showing => state.error(format!("{e:#}")),
-        _ => {}
+    if let Some(job) = refresh.tasks.take_if(|job| job.is_finished()) {
+        let showing = matches!(
+            &state.screen,
+            state::Screen::Tasks { project } if *project == refresh.project
+        );
+        match joined(job) {
+            Ok(tasks) if showing => state.set_tasks(tasks),
+            Err(e) if showing => state.error(format!("{e:#}")),
+            _ => {}
+        }
     }
+    if let Some(job) = refresh.projects.take_if(|job| job.is_finished()) {
+        state.set_projects(joined(job), None);
+    }
+    if refresh.tasks.is_none() && refresh.projects.is_none() {
+        app.refresh = None;
+    }
+}
+
+/// The result of a finished thread, passing its panic on.
+fn joined<T>(job: JoinHandle<T>) -> T {
+    job.join()
+        .unwrap_or_else(|panic| std::panic::resume_unwind(panic))
 }
 
 /// `tasks` with what `sessions` say about them: which run, and when each was last used.

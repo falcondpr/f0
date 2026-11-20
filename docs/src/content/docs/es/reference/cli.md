@@ -19,7 +19,7 @@ Muestra la pantalla de inicio de f0: tus proyectos, y después las tareas del qu
 f0 launch
 ```
 
-Los proyectos y las tareas se muestran como tarjetas, y la seleccionada lleva el borde del color de acento. La tarjeta de un proyecto cuenta sus tareas; la de una tarea muestra su rama y si está corriendo (`●`, con cuándo la usaste por última vez) o parada (`○`: el slot está alquilado, sin sesión). Mira [Atajos](/es/reference/keybindings/#launcher) para todas las teclas.
+Los proyectos y las tareas se muestran como una tabla bajo un buscador, y la fila seleccionada lleva el color de acento. La fila de un proyecto cuenta sus tareas; la de una tarea muestra su rama, si está corriendo (`●`) o parada (`○`: el slot está alquilado, sin sesión) y cuándo la usaste por última vez. El pie de la tabla cuenta las filas y cuántas deja la búsqueda. Mira [Atajos](/es/reference/keybindings/#launcher) para todas las teclas.
 
 - **Enter sobre una tarea** la abre como `f0 open` y se conecta a su sesión. Al salir de la sesión, desconectándote (`Ctrl-a d`), con `f0 stop` o con `f0 done`, vuelve la lista de tareas de ese proyecto, actualizada; Esc sube a los proyectos.
 - **`n`** pide un ticket y empieza la tarea como `f0 new`.
@@ -179,7 +179,7 @@ treehouse numera los slots por repositorio, así que el mismo número aparece en
 
 ## f0 switch
 
-Elige una sesión de f0 entre tarjetas como las de [`f0 launch`](#f0-launch), las usadas más recientemente primero, y cambia a ella. Dentro de tmux cambia el cliente actual; fuera, se conecta. Enter cambia, `/` filtra, y Esc o `q` salen sin cambiar.
+Elige una sesión de f0 de una tabla como la de [`f0 launch`](#f0-launch), las usadas más recientemente primero, y cambia a ella. Dentro de tmux cambia el cliente actual; fuera, se conecta. Enter cambia, `/` busca, y Esc o `q` salen sin cambiar.
 
 ## f0 stop
 

@@ -2,7 +2,7 @@
 //! git: keys that need them return an `Action`, which `launch::run` carries out before
 //! handing the results back through the `show_*` and `set_*` methods.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::appearance::Mode;
 
@@ -136,9 +136,6 @@ pub struct State {
     /// What a `Confirm` prompt runs on yes.
     pub pending: Option<Action>,
     pub message: Option<Message>,
-    /// How many cards fit in a row, which Up and Down jump over. Set from the window
-    /// width before each key.
-    pub columns: usize,
     /// What the launcher is waiting for, shown with a spinner.
     pub busy: Option<String>,
     /// Advances while busy, to animate the spinner.
@@ -160,7 +157,6 @@ impl State {
             prompt: None,
             pending: None,
             message: None,
-            columns: 1,
             busy: None,
             tick: 0,
             appearance: Mode::System,
@@ -199,6 +195,14 @@ impl State {
             Some(position) => self.selected = position,
             None => self.clamp(),
         }
+    }
+
+    /// Drops the task in `path`, whose slot went back to the pool, without waiting for
+    /// treehouse to list the slots again. The selection stays on the same row, now the
+    /// next task.
+    pub fn remove_task(&mut self, path: &Path) {
+        self.tasks.retain(|task| task.path != path);
+        self.clamp();
     }
 
     /// New projects, selecting `select` when given.
@@ -292,14 +296,8 @@ impl State {
             return self.handle_prompt(key);
         }
         match key {
-            Key::Up | Key::Char('k') => {
-                if self.selected >= self.columns {
-                    self.selected -= self.columns;
-                }
-            }
-            Key::Down | Key::Char('j') => self.move_down(),
-            Key::Left | Key::Char('h') => self.selected = self.selected.saturating_sub(1),
-            Key::Right | Key::Char('l') => {
+            Key::Up | Key::Char('k') => self.selected = self.selected.saturating_sub(1),
+            Key::Down | Key::Char('j') => {
                 let last = self.visible().len().saturating_sub(1);
                 self.selected = (self.selected + 1).min(last);
             }
@@ -454,23 +452,6 @@ impl State {
         Action::None
     }
 
-    /// One row down, or to the last card when the row below is shorter.
-    fn move_down(&mut self) {
-        let Some(last) = self.visible().len().checked_sub(1) else {
-            return;
-        };
-        let columns = self.columns.max(1);
-        if self.selected + columns <= last {
-            self.selected += columns;
-        } else if self.selected / columns < last / columns {
-            self.selected = last;
-        }
-    }
-
-    pub fn set_columns(&mut self, columns: usize) {
-        self.columns = columns.max(1);
-    }
-
     fn open_prompt(&mut self, kind: PromptKind, text: String) {
         self.prompt = Some(Prompt { kind, text });
     }
@@ -551,32 +532,29 @@ mod tests {
     }
 
     #[test]
-    fn cards_move_in_a_grid() {
-        let projects = (0..7).map(|i| project(&format!("p{i}"))).collect();
-        let mut state = State::new(projects);
-        state.set_columns(3);
-        // p0 p1 p2
-        // p3 p4 p5
-        // p6
-        state.handle(Key::Right);
-        state.handle(Key::Char('l'));
-        state.handle(Key::Right);
-        assert_eq!(state.selected, 3, "right walks past the end of a row");
-        state.handle(Key::Char('h'));
-        assert_eq!(state.selected, 2);
-        state.handle(Key::Down);
-        assert_eq!(state.selected, 5);
-        state.handle(Key::Down);
-        assert_eq!(state.selected, 6, "a shorter last row takes its last card");
-        state.handle(Key::Down);
-        assert_eq!(state.selected, 6);
+    fn rows_stop_at_both_ends_of_the_list() {
+        let mut state = State::new(vec![project("api"), project("web")]);
         state.handle(Key::Up);
-        assert_eq!(state.selected, 3);
-        state.handle(Key::Up);
-        state.handle(Key::Up);
-        assert_eq!(state.selected, 0, "the first row stays put");
-        state.handle(Key::Left);
         assert_eq!(state.selected, 0);
+        state.handle(Key::Down);
+        state.handle(Key::Down);
+        assert_eq!(state.selected, 1);
+        assert_eq!(
+            state.handle(Key::Right),
+            Action::None,
+            "a single column has nothing to the side"
+        );
+        assert_eq!(state.selected, 1);
+    }
+
+    #[test]
+    fn a_finished_task_leaves_the_list_at_once() {
+        let mut state = tasks_screen();
+        state.handle(Key::Down);
+        state.remove_task(Path::new("/pool/WEB-2"));
+        let names: Vec<_> = state.tasks.iter().map(|t| t.task.as_str()).collect();
+        assert_eq!(names, ["WEB-1"]);
+        assert_eq!(state.selected, 0, "the selection falls back to a valid row");
     }
 
     #[test]
@@ -638,7 +616,7 @@ mod tests {
         state.set_tasks(vec![task("WEB-1", None, None)]);
         assert_eq!(
             state.selected, 0,
-            "a returned slot falls back to a valid card"
+            "a returned slot falls back to a valid row"
         );
     }
 
@@ -844,7 +822,7 @@ mod tests {
     #[test]
     fn project_keys_edit_and_check_without_a_shell() {
         let mut state = State::new(vec![project("api"), project("web")]);
-        state.handle(Key::Right);
+        state.handle(Key::Down);
         assert_eq!(state.handle(Key::Char('e')), Action::Edit("web".to_owned()));
         assert_eq!(state.handle(Key::Char('d')), Action::Doctor);
         assert_eq!(

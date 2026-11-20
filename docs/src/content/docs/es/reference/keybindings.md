@@ -13,7 +13,7 @@ En [`f0 launch`](/es/reference/cli/#f0-launch), la pantalla de inicio de f0.app.
 
 | Teclas | Proyectos | Tareas |
 |---|---|---|
-| Flechas o `h/j/k/l` | Moverse entre tarjetas | Moverse entre tarjetas |
+| `↑/↓` o `j/k` | Moverse entre filas | Moverse entre filas |
 | `Enter` | Ver sus tareas | Abrir la tarea y conectarse a su sesión |
 | `a` | Agregar un proyecto desde tus repositorios | |
 | `n` | | Empezar una tarea, pidiendo su ticket |
@@ -22,8 +22,8 @@ En [`f0 launch`](/es/reference/cli/#f0-launch), la pantalla de inicio de f0.app.
 | `e` | Editar el proyecto (`f0 edit`) | Editar el proyecto (`f0 edit`) |
 | `d` | Revisar la instalación (`f0 doctor`) | |
 | `t` | Cambiar el tema: auto (sigue a macOS), claro u oscuro. Ver [Apariencia](/es/guides/appearance/#claro-u-oscuro-desde-el-launcher) | |
-| `/` | Filtrar las tarjetas | Filtrar las tarjetas |
-| `Esc` | Borrar el filtro | Borrar el filtro, después volver a los proyectos |
+| `/` | Buscar en la lista | Buscar en la lista |
+| `Esc` | Borrar la búsqueda | Borrar la búsqueda, después volver a los proyectos |
 | `q` | Salir, cerrando la ventana de f0.app | Salir, cerrando la ventana de f0.app |
 
 En la lista de repositorios que muestra `a`, `Enter` agrega uno, `p` toma una carpeta que escribes y `Esc` vuelve.
