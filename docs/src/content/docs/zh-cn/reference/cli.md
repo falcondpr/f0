@@ -21,7 +21,7 @@ f0 launch
 
 项目和任务以卡片形式显示，选中的卡片使用强调色边框。项目卡片显示任务数量；任务卡片显示分支，以及它是运行中（`●`，并显示上次使用时间）还是已停止（`○`：slot 已租用，但没有会话）。所有按键见[快捷键](/zh-cn/reference/keybindings/#启动器)。
 
-- **在任务上按 Enter** 会像 `f0 open` 一样打开它并连接到它的会话。通过 detach（`Ctrl-a d`）、`f0 stop` 或 `f0 done` 离开会话后，会回到项目列表，并选中该项目。
+- **在任务上按 Enter** 会像 `f0 open` 一样打开它并连接到它的会话。通过 detach（`Ctrl-a d`）、`f0 stop` 或 `f0 done` 离开会话后，会回到该项目的任务列表（已刷新）；按 Esc 返回项目列表。
 - **`n`** 询问 ticket，并像 `f0 new` 一样开始任务。
 - **`a`**（在项目列表中）在[搜索目录](/zh-cn/reference/configuration/#启动器)中最多向下三层查找尚未成为项目的 git 仓库，跳过 `node_modules`、`target`、隐藏目录和 treehouse slot。在某个仓库上按 Enter 会为它运行 `f0 init` 的问题，`p` 可以输入搜索没有找到的仓库目录。
 - **`q`** 退出启动器，这会关闭 f0.app 的窗口。启动器不提供进入独立 shell 的方式。
@@ -99,7 +99,7 @@ Add another server? [y/N]:
 租用一个带有新分支的 treehouse slot，并打开它的工作区。
 
 ```bash
-f0 new <ticket> [--project <name>] [--base <branch>] [--type <type>] [--start <servers>] [--agent <command>] [--no-attach]
+f0 new <ticket> [--project <name>] [--base <branch>] [--type <type>] [--start <servers>] [--agent <command>]... [--no-attach]
 ```
 
 | 参数 | 含义 |
@@ -109,7 +109,7 @@ f0 new <ticket> [--project <name>] [--base <branch>] [--type <type>] [--start <s
 | `--base` | 从哪个分支切出，覆盖项目中的 `base` |
 | `-t`、`--type` | 分支类型：项目 `branch_prefixes` 中的一个，带不带 `/` 都可以（`--type fix` 会创建 `fix/APP-123`）。会话名仍然是 `my-app/APP-123` |
 | `--start` | 立即启动的服务器，用逗号分隔（`--start api,web`）。其他服务器等待 Enter，除非它们设置了 `autostart = true` |
-| `--agent` | 仅用于此任务的 AI 智能体，比如 `codex` 或 `opencode`，覆盖项目中的设置 |
+| `--agent` | 仅用于此任务的 AI 智能体，比如 `codex` 或 `opencode`，覆盖项目中的设置。重复使用可在智能体列中堆叠多个智能体，第一个在最上面：`--agent claude --agent codex` |
 | `--no-attach` | 创建会话但不连接，并输出会话名 |
 
 需要 treehouse、项目文件及其 [worktree include 文件](/zh-cn/guides/worktrees/#worktreeinclude)。如果缺少其中任何一个，或者已存在同名会话，会在租用 slot 之前失败。
@@ -121,21 +121,39 @@ f0 new <ticket> [--project <name>] [--base <branch>] [--type <type>] [--start <s
 重新打开一个 treehouse slot 的工作区；如果它的会话正在运行，就连接到该会话。
 
 ```bash
-f0 open [slot] [--start <servers>] [--agent <command>] [--no-attach]
+f0 open [slot] [--start <servers>] [--agent <command>]... [--no-attach]
 ```
 
 | 参数 | 含义 |
 |---|---|
 | `[slot]` | 要打开的 slot：它的 id（`my-app/4`）、任务（`APP-123`）、会话名或路径（其中任意目录都可以），与 `f0 ls` 显示的一致。默认是当前目录 |
 | `--start` | 重建会话时要启动的服务器，与 `f0 new` 相同。会话已在运行时不起作用 |
-| `--agent` | 重建会话使用的 AI 智能体，与 `f0 new` 相同 |
+| `--agent` | 重建会话使用的 AI 智能体，与 `f0 new` 相同，替换会话原有的智能体 |
 | `--no-attach` | 创建会话但不连接 |
 
-重建的会话会恢复智能体在该任务中的最后一次对话。参见[恢复对话](/zh-cn/reference/configuration/#恢复对话)。
+重建的会话会带回关闭时的所有智能体，包括用 [`f0 agent`](#f0-agent) 添加的，其中第一个会恢复它在该任务中的最后一次对话。其他智能体重新开始：按目录恢复（如 `claude --continue`）无法区分它们的对话。参见[恢复对话](/zh-cn/reference/configuration/#恢复对话)。
 
 当任务的会话被关闭后（例如 tmux 或电脑重启后），用它把任务找回来。slot 必须属于一个已配置的项目；其他目录会被拒绝。
 
 已存在的目录总是优先于名称。单独的 slot 编号（`4`）也可以，但它会在多个项目中重复：这时会使用当前目录所在的项目；不在任何项目中时，f0 会列出可选的 id。
+
+## f0 agent
+
+在任务的会话中，在已有智能体的下方启动另一个智能体。
+
+```bash
+f0 agent [command]
+```
+
+| 参数 | 含义 |
+|---|---|
+| `[command]` | 智能体及其参数，比如 `codex` 或 `codex --full-auto`。默认是项目的智能体 |
+
+在任务会话的任意窗格中运行它，或者按 `Ctrl-a A`，它会在状态栏中询问命令（直接按 Enter 启动项目的智能体）。新窗格位于最后一个智能体下方，在 slot 的目录中，标题为 `agent: codex`，同一程序的第二个则为 `agent: claude 2`；智能体列保持原宽度，其中的智能体平分高度。在 f0 会话之外运行会失败，不做任何改动。
+
+f0 会记住每个 slot 的智能体，所以 `f0 stop` 和 `f0 open`（或启动器）会把它们带回来。用 `Ctrl-a x` 关闭的智能体窗格不会再回来。用 `f0 done` 归还 slot 时会忘掉它们，该 slot 的下一个任务从项目的智能体开始。
+
+一个会话中的所有智能体都在同一个目录、同一个分支上工作。第二个智能体适合在第一个工作时做审查、测试或回答关于代码的问题；两个并行的修改应该放在两个任务中。
 
 ## f0 ls
 
@@ -196,13 +214,13 @@ f0 done ~/.treehouse/my-app-3f9a2c/4/my-app  # 路径，来自 `f0 ls --paths`
 
 ## f0 keys
 
-在正在运行的 tmux 服务器上绑定关闭任务的按键，并在每个 f0 会话的状态栏中显示它。
+在正在运行的 tmux 服务器上绑定 f0 的按键（关闭任务的按键和启动另一个智能体的按键），并在每个 f0 会话的状态栏中显示它们。
 
 ```bash
 f0 keys
 ```
 
-`f0 new` 和 `f0 open` 会为它们的会话执行这一步，`install.sh` 在更新后也会运行它，所以已经打开的会话无需重新加载 tmux 就能获得新的绑定。按键来自 [`[keys] done`](/zh-cn/reference/configuration/#按键)；修改后，运行 `f0 keys` 解除旧按键的绑定。
+`f0 new` 和 `f0 open` 会为它们的会话执行这一步，`install.sh` 在更新后也会运行它，所以已经打开的会话无需重新加载 tmux 就能获得新的绑定。按键来自 [`[keys]`](/zh-cn/reference/configuration/#按键)；修改某个按键后，运行 `f0 keys` 解除旧按键的绑定。
 
 ## f0 doctor
 
@@ -214,7 +232,7 @@ f0 keys
 | 至少一个项目 | 是 |
 | 默认值和每个项目中的编辑器与智能体命令 | 是 |
 | 每个项目的 `repo` 和 worktree include 文件 | 是 |
-| 正在运行的 tmux 服务器绑定了关闭任务的按键（没有服务器或设置了 `[keys] done = false` 时跳过） | 是 |
+| 正在运行的 tmux 服务器绑定了关闭任务和启动另一个智能体的按键（没有服务器，或某个按键设为 `false` 时跳过） | 是 |
 | `gh`、`rg`、Ghostty | 否 |
 | `/Applications/f0.app`（会区分同名的其他应用）及其配置 `~/.config/f0/ghostty.conf` | 否 |
 | 链接了内置 tmux 配置时：tmux 3.8 或更高版本，主题需要它 | 是 |

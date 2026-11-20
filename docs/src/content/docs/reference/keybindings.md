@@ -39,6 +39,7 @@ The prefix is `Ctrl-a`.
 | `Ctrl-a s` | Pick a session |
 | `Ctrl-a d` | Detach; everything keeps running |
 | `Ctrl-a X` | Close the f0 task of this session: a menu to keep its slot for later (`f0 stop`) or return it, after asking (`f0 done`). Bound by f0 itself, see [Keys](/reference/configuration/#keys) |
+| `Ctrl-a A` | Start another agent under the ones of this session: asks for the command, Enter alone starts the project's (`f0 agent`). Bound by f0 itself |
 | `Ctrl-a \|` / `Ctrl-a -` | Split right / below |
 | `Ctrl-a c` | New window |
 | `Ctrl-a [` | Scroll back (`v` select, `y` copy to the clipboard) |
@@ -110,4 +111,4 @@ These apply in f0.app, from its own config, and in your Ghostty when the bundled
 
 `Ctrl-h/j/k/l` across panes needs both halves of [vim-tmux-navigator](https://github.com/christoomey/vim-tmux-navigator): its snippet in your tmux config and the plugin in Neovim. Without them, move between panes with your tmux prefix and the arrow keys. Pane titles appear only if your tmux config sets `pane-border-status`.
 
-f0 binds `X` after your own prefix whenever it creates or opens a session, so it works with any tmux config and needs no reload. The status line of each f0 session shows it, like `C-b X close task`. Pick another key or turn it off with [`[keys] done`](/reference/configuration/#keys).
+f0 binds `X` and `A` after your own prefix whenever it creates or opens a session, so they work with any tmux config and need no reload. The status line of each f0 session shows them, like `C-b X close task  C-b A new agent`. Pick other keys or turn them off with [`[keys]`](/reference/configuration/#keys).

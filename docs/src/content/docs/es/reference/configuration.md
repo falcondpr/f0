@@ -53,13 +53,15 @@ f0 define sus teclas de tmux por su cuenta, después de tu prefijo de tmux, así
 ```toml
 [keys]
 done = "X"
+agent = "A"
 ```
 
 | Clave | Por defecto | Significado |
 |---|---|---|
 | `keys.done` | `"X"` | Abre un menú para cerrar la tarea de la sesión donde se aprieta: conservando su slot, como `f0 stop`, o devolviéndolo, como `f0 done`. Cualquier nombre de tecla de tmux (`"Q"`, `"M-x"`); `false` la desactiva |
+| `keys.agent` | `"A"` | Pide un agente en la barra de estado y lo arranca debajo de los demás en la sesión donde se aprieta, como [`f0 agent`](/es/reference/cli/#f0-agent). Enter solo arranca el agente del proyecto. Acepta los mismos valores que `keys.done` y tiene que ser otra tecla |
 
-La barra de estado de cada sesión de f0 muestra la tecla, como `C-a X close task`. f0 nunca reemplaza una tecla que tu configuración de tmux ya usa para otra cosa: `f0 keys` y `f0 doctor` te piden elegir otra.
+La barra de estado de cada sesión de f0 muestra las teclas, como `C-a X close task  C-a A new agent`. f0 nunca reemplaza una tecla que tu configuración de tmux ya usa para otra cosa: `f0 keys` y `f0 doctor` te piden elegir otra.
 
 ## Launcher
 
@@ -83,6 +85,7 @@ El panel del agente ejecuta el comando que le des, así que cualquier CLI de IA 
 | En todos los proyectos | `[defaults.agent] cmd = "codex"` en `config.toml` |
 | En un proyecto | `[agent] cmd = "opencode"` en su archivo, o responde la pregunta de `f0 init` y `f0 edit` |
 | En una tarea | `f0 new APP-123 --agent gemini` |
+| Varios en una tarea | `f0 new APP-123 --agent claude --agent codex`, o [`f0 agent codex`](/es/reference/cli/#f0-agent) en una sesión abierta |
 
 Se pueden pasar argumentos (`cmd = "codex --full-auto"`). `f0 new` y `f0 open` no arrancan si el programa del agente no está instalado, y `f0 doctor` revisa el agente de cada proyecto.
 
@@ -95,6 +98,8 @@ Cuando `f0 open` rearma una sesión cerrada, por ejemplo después de reiniciar, 
 cmd = "codex"
 resume = "codex resume --last"
 ```
+
+Con varios agentes en una sesión, solo el primero retoma: dos agentes que retoman por carpeta tomarían la misma conversación. Los demás arrancan de cero.
 
 Si el comando para retomar falla, como cuando todavía no hay conversación, el agente arranca de cero. `f0 new` siempre arranca una conversación nueva.
 

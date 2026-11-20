@@ -21,7 +21,7 @@ f0 launch
 
 Projects and tasks show as cards, with the selected one outlined in the accent color. A project card counts its tasks; a task card shows its branch and whether it is running (`●`, with when you last used it) or stopped (`○`: the slot is leased, without a session). See [Key bindings](/reference/keybindings/#launcher) for every key.
 
-- **Enter on a task** opens it like `f0 open` and attaches to its session. Leaving the session, by detaching (`Ctrl-a d`), with `f0 stop` or with `f0 done`, brings back the list of projects, with that project selected.
+- **Enter on a task** opens it like `f0 open` and attaches to its session. Leaving the session, by detaching (`Ctrl-a d`), with `f0 stop` or with `f0 done`, brings back the task list of that project, refreshed; Esc goes up to the projects.
 - **`n`** asks for a ticket and starts the task like `f0 new`.
 - **`a`**, on the projects, looks for git repositories that are not projects yet, up to three folders deep in the [search folders](/reference/configuration/#launcher), skipping `node_modules`, `target`, hidden folders and treehouse slots. Enter on one runs the questions of `f0 init` for it, and `p` takes the folder of one the search missed.
 - **`q`** leaves the launcher, which closes the window of f0.app. The launcher has no way out to a plain shell.
@@ -99,7 +99,7 @@ If nothing changed it says so and leaves the file alone. Otherwise it shows a `g
 Lease a treehouse slot with a new branch and open its workspace.
 
 ```bash
-f0 new <ticket> [--project <name>] [--base <branch>] [--type <type>] [--start <servers>] [--agent <command>] [--no-attach]
+f0 new <ticket> [--project <name>] [--base <branch>] [--type <type>] [--start <servers>] [--agent <command>]... [--no-attach]
 ```
 
 | Argument | Meaning |
@@ -109,7 +109,7 @@ f0 new <ticket> [--project <name>] [--base <branch>] [--type <type>] [--start <s
 | `--base` | Branch to cut from, overriding `base` in the project |
 | `-t`, `--type` | Branch type: one of the project's `branch_prefixes`, with or without the `/` (`--type fix` creates `fix/APP-123`). The session is still `my-app/APP-123` |
 | `--start` | Servers to start right away, comma separated (`--start api,web`). The others wait for Enter, unless they have `autostart = true` |
-| `--agent` | AI agent for this task only, like `codex` or `opencode`, overriding the project's |
+| `--agent` | AI agent for this task only, like `codex` or `opencode`, overriding the project's. Repeat it to stack several agents in the agent column, the first on top: `--agent claude --agent codex` |
 | `--no-attach` | Create the session without attaching, and print its name |
 
 Requires treehouse, a project file and its [worktree include file](/guides/worktrees/#worktreeinclude). Fails before leasing a slot if any is missing, and if a session with the same name exists.
@@ -121,21 +121,39 @@ When the branch already exists, locally or on `origin`, as with a task returned 
 Reopen the workspace of a treehouse slot, attaching to its session if it is running.
 
 ```bash
-f0 open [slot] [--start <servers>] [--agent <command>] [--no-attach]
+f0 open [slot] [--start <servers>] [--agent <command>]... [--no-attach]
 ```
 
 | Argument | Meaning |
 |---|---|
 | `[slot]` | Slot to open: its id (`my-app/4`), its task (`APP-123`), its session name or its path (any folder inside it works), as `f0 ls` shows them. Defaults to the current directory |
 | `--start` | Servers to start when the session is rebuilt, as in `f0 new`. Does nothing if the session is already running |
-| `--agent` | AI agent for the rebuilt session, as in `f0 new` |
+| `--agent` | AI agents for the rebuilt session, as in `f0 new`, replacing the ones it had |
 | `--no-attach` | Create the session without attaching |
 
-A rebuilt session resumes the agent's last conversation in the task. See [Resuming the conversation](/reference/configuration/#resuming-the-conversation).
+A rebuilt session comes back with the agents it had when it was closed, including the ones added with [`f0 agent`](#f0-agent), and the first one resumes its last conversation in the task. The others start fresh: resuming by folder, like `claude --continue`, cannot tell their conversations apart. See [Resuming the conversation](/reference/configuration/#resuming-the-conversation).
 
 Use it to get a task back after its session was closed, for example when tmux or the computer restarted. The slot must belong to a configured project; any other folder is refused.
 
 An existing folder always wins over a name. A bare slot number (`4`) also works, but it repeats across projects: then the project of the current directory is used, and outside any project f0 lists the ids to pick from.
+
+## f0 agent
+
+Start another agent in the session of a task, under the ones it has.
+
+```bash
+f0 agent [command]
+```
+
+| Argument | Meaning |
+|---|---|
+| `[command]` | The agent and its arguments, like `codex` or `codex --full-auto`. Defaults to the project's agent |
+
+Run it in any pane of a task's session, or press `Ctrl-a A`, which asks for the command in the status line (Enter alone starts the project's agent). The new pane goes under the last agent, in the slot's folder, titled `agent: codex`, or `agent: claude 2` for a second one of the same program; the agent column keeps its width and its agents share the height evenly. Outside an f0 session it fails without changing anything.
+
+f0 remembers the agents of each slot, so `f0 stop` and `f0 open`, or the launcher, bring them back. An agent pane closed with `Ctrl-a x` stays closed. Returning the slot with `f0 done` forgets them, and the next task in that slot starts with the project's agent.
+
+Every agent of a session works in the same folder and on the same branch. A second agent is for reviewing, testing or answering questions about the code while the first one works; two changes in parallel belong in two tasks.
 
 ## f0 ls
 
@@ -196,13 +214,13 @@ Inside the session it would close, closing the session would stop `f0 done` itse
 
 ## f0 keys
 
-Bind the key that closes a task on the running tmux server and show it in the status line of every f0 session.
+Bind the f0 keys, the one that closes a task and the one that starts another agent, on the running tmux server and show them in the status line of every f0 session.
 
 ```bash
 f0 keys
 ```
 
-`f0 new` and `f0 open` do it for their sessions, and `install.sh` runs it after an update, so sessions that were already open get the new binding without reloading tmux. The key comes from [`[keys] done`](/reference/configuration/#keys); after changing it, run `f0 keys` to unbind the old one.
+`f0 new` and `f0 open` do it for their sessions, and `install.sh` runs it after an update, so sessions that were already open get the new bindings without reloading tmux. The keys come from [`[keys]`](/reference/configuration/#keys); after changing one, run `f0 keys` to unbind the old one.
 
 ## f0 doctor
 
@@ -214,7 +232,7 @@ Check tools, global defaults, project configs, the tmux keys and what keeps the 
 | At least one project | Yes |
 | Editor and agent commands of the defaults and each project | Yes |
 | Each project's `repo` and worktree include file | Yes |
-| The running tmux server binds the key that closes a task (skipped with no server or with `[keys] done = false`) | Yes |
+| The running tmux server binds the keys that close a task and start another agent (skipped with no server, or for a key set to `false`) | Yes |
 | `gh`, `rg`, Ghostty | No |
 | `/Applications/f0.app`, telling it from another app with that name, and its config `~/.config/f0/ghostty.conf` | No |
 | With the bundled tmux config linked: tmux 3.8 or later, which the theme needs | Yes |

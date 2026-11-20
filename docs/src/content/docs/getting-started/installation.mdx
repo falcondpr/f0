@@ -80,7 +80,7 @@ The installer can run again safely: links that already point to f0 are kept, and
 
 ## f0.app
 
-f0.app is f0's own terminal, so its keys work the same whatever terminal you use for everything else. It is a copy of Ghostty named f0, with its own icon and its own config, `~/.config/f0/ghostty.conf`. Every window opens the [launcher](/reference/cli/#f0-launch): pick a project, then a task, and leaving its session brings back the list of projects. f0.app has no plain shell: `q` closes the window.
+f0.app is f0's own terminal, so its keys work the same whatever terminal you use for everything else. It is a copy of Ghostty named f0, with its own icon and its own config, `~/.config/f0/ghostty.conf`. Every window opens the [launcher](/reference/cli/#f0-launch): pick a project, then a task, and leaving its session brings back the tasks of that project. f0.app has no plain shell: `q` closes the window.
 
 - It is separate from Ghostty: your Ghostty, open or closed, and its config do not affect it, and it does not change them.
 - The installer copies `/Applications/Ghostty.app`, installing it with Homebrew when missing, renames the copy, gives it the bundle id `com.falcondpr.f0` and signs it ad hoc.

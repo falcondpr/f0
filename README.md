@@ -37,6 +37,7 @@ f0 doctor
 f0 new APP-123                  # lease a slot on feature/APP-123 and open the workspace
 f0 new APP-124 --start api,web  # same, starting those servers; the rest wait for Enter
 f0 new APP-125 --agent codex    # any AI CLI as the agent: claude, codex, gemini, opencode...
+f0 agent codex                  # in a task's pane: another agent under the current one
 f0 new APP-126 --type fix       # fix/APP-126 instead of feature/: any of branch_prefixes
 f0 ls                           # slots and sessions of every project
 f0 switch                       # jump to another task
