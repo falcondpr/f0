@@ -1,12 +1,12 @@
 -- Ancho de los paneles laterales (neo-tree y el file panel de diffview). El editor
--- comparte su pane de tmux con el agente y tiene un panel a cada lado: con anchos
--- fijos el código quedaba tan angosto como cada panel. Una parte del ancho, con
--- tope arriba y abajo, deja al código la mayor parte y los paneles siguen legibles.
+-- comparte su pane de tmux con el agente y muestra un panel a la vez: con anchos
+-- fijos el código quedaba tan angosto como el panel. Una parte del ancho, con tope
+-- arriba y abajo, deja al código la mayor parte y el panel sigue legible.
 local M = {}
 
-local share = 0.18
-local min_width = 22
-local max_width = 30
+local share = 0.27
+local min_width = 24
+local max_width = 50
 
 local side_filetypes = { ["neo-tree"] = true, DiffviewFiles = true }
 

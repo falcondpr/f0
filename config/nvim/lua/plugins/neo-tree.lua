@@ -81,9 +81,12 @@ return {
       window = {
         width = side_width,
       },
+      -- Explorer y cambios comparten el lado izquierdo: abrir uno reemplaza al otro.
+      -- Con un panel a cada lado, y el agente al costado, el código y los paneles
+      -- quedaban angostos a la vez.
       filesystem = {
         window = {
-          position = "right",
+          position = "left",
           width = side_width,
         },
         filtered_items = {
@@ -95,6 +98,9 @@ return {
           enabled = true,
         },
         use_libuv_file_watcher = true,
+        -- El hijack abre el explorer 10 ms después del arranque y cierra los demás
+        -- paneles, también el de cambios que abre `nvim .`.
+        hijack_netrw_behavior = "disabled",
       },
       git_status = {
         window = {
@@ -115,7 +121,6 @@ return {
         end
       end
       vim.cmd("Neotree show left git_status")
-      vim.cmd("Neotree show right filesystem")
     end
 
     -- El panel git_status no escucha el filesystem, y el watcher del explorer solo
@@ -194,21 +199,27 @@ return {
     })
     start_git_status_watcher()
 
-    vim.api.nvim_create_user_command("IDE", ide_layout, { desc = "Layout de 3 paneles" })
+    vim.api.nvim_create_user_command("IDE", ide_layout, { desc = "Layout con el panel de cambios" })
 
     local map = vim.keymap.set
-    map("n", "<leader>e", "<cmd>Neotree toggle right filesystem<cr>",
-      { desc = "Explorador de archivos (derecha)" })
+    map("n", "<leader>e", "<cmd>Neotree toggle left filesystem<cr>",
+      { desc = "Explorador de archivos (izquierda)" })
     map("n", "<leader>gm", "<cmd>Neotree toggle left git_status<cr>",
       { desc = "Archivos modificados (izquierda)" })
-    map("n", "<leader>ui", ide_layout, { desc = "Layout IDE (3 paneles)" })
+    map("n", "<leader>ui", ide_layout, { desc = "Layout IDE (panel de cambios)" })
 
-    -- Al abrir `nvim .` sobre un directorio, montar el layout completo
+    -- `nvim .` deja abierto el buffer del directorio: va uno vacío en su lugar, con los
+    -- atajos de f0/empty.lua, y al lado el panel de cambios.
     vim.api.nvim_create_autocmd("VimEnter", {
       callback = function()
         local arg = vim.fn.argv(0)
         if type(arg) == "string" and arg ~= "" and vim.fn.isdirectory(arg) == 1 then
-          vim.schedule(ide_layout)
+          vim.schedule(function()
+            local directory = vim.api.nvim_get_current_buf()
+            vim.cmd("enew")
+            pcall(vim.api.nvim_buf_delete, directory, { force = true })
+            ide_layout()
+          end)
         end
       end,
     })

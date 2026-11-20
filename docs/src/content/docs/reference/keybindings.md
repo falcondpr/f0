@@ -13,7 +13,7 @@ In [`f0 launch`](/reference/cli/#f0-launch), the home screen of f0.app.
 
 | Keys | Projects | Tasks |
 |---|---|---|
-| Arrows or `h/j/k/l` | Move between cards | Move between cards |
+| `↑/↓` or `j/k` | Move between rows | Move between rows |
 | `Enter` | Show its tasks | Open the task and attach to its session |
 | `a` | Add a project from your repositories | |
 | `n` | | Start a task, asking for its ticket |
@@ -22,8 +22,8 @@ In [`f0 launch`](/reference/cli/#f0-launch), the home screen of f0.app.
 | `e` | Edit the project (`f0 edit`) | Edit the project (`f0 edit`) |
 | `d` | Check the setup (`f0 doctor`) | |
 | `t` | Switch the theme: auto (follows macOS), light or dark. See [Appearance](/guides/appearance/#light-or-dark-from-the-launcher) | |
-| `/` | Filter the cards | Filter the cards |
-| `Esc` | Clear the filter | Clear the filter, then back to the projects |
+| `/` | Search the list | Search the list |
+| `Esc` | Clear the search | Clear the search, then back to the projects |
 | `q` | Quit, closing the f0.app window | Quit, closing the f0.app window |
 
 In the list of repositories that `a` shows, `Enter` adds one, `p` takes a folder you type, and `Esc` goes back.
@@ -74,9 +74,9 @@ These apply in f0.app, from its own config, and in your Ghostty when the bundled
 | `Space fg` | Search text in the project |
 | `Space fb` | Open buffers |
 | `Space fr` | Recent files |
-| `Space e` | Toggle the explorer |
+| `Space e` | Toggle the explorer, in place of the changed files |
 | `Space gm` | Toggle the changed files panel |
-| `Space ui` | Restore the three-column layout |
+| `Space ui` | Back to the changed files panel |
 | `Space un` | Toggle line numbers (relative), for counted motions like `5j` |
 | `Shift-l` / `Shift-h` | Next / previous buffer |
 | `Space bd` | Close the buffer, asking to save, discard or cancel if it has unsaved changes |

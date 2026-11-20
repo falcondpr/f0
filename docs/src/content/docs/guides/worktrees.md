@@ -17,6 +17,16 @@ AI agents work best with one checkout per task, so two tasks never touch the sam
 
 Slots live at `~/.treehouse/<repo>-<id>/<slot>/<repo>`. `f0 ls` shows the slots in use as `<project>/<slot>`, an id that is unique across projects, with their task and session.
 
+### More than 16 tasks
+
+treehouse keeps up to 16 slots per repository. To run more tasks at once, raise `max_trees` in a `treehouse.toml` at the root of the repository:
+
+```toml
+max_trees = 32
+```
+
+To keep the file out of the repository, list it in `.git/info/exclude`.
+
 ## .worktreeinclude
 
 Every project needs one: f0 does not start a task without it. A new slot only has tracked files. Ignored files such as `.env` are copied from the main checkout if they match a pattern in `.worktreeinclude` at the repository root, one per line:

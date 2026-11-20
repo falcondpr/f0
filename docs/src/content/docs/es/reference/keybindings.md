@@ -13,7 +13,7 @@ En [`f0 launch`](/es/reference/cli/#f0-launch), la pantalla de inicio de f0.app.
 
 | Teclas | Proyectos | Tareas |
 |---|---|---|
-| Flechas o `h/j/k/l` | Moverse entre tarjetas | Moverse entre tarjetas |
+| `↑/↓` o `j/k` | Moverse entre filas | Moverse entre filas |
 | `Enter` | Ver sus tareas | Abrir la tarea y conectarse a su sesión |
 | `a` | Agregar un proyecto desde tus repositorios | |
 | `n` | | Empezar una tarea, pidiendo su ticket |
@@ -22,8 +22,8 @@ En [`f0 launch`](/es/reference/cli/#f0-launch), la pantalla de inicio de f0.app.
 | `e` | Editar el proyecto (`f0 edit`) | Editar el proyecto (`f0 edit`) |
 | `d` | Revisar la instalación (`f0 doctor`) | |
 | `t` | Cambiar el tema: auto (sigue a macOS), claro u oscuro. Ver [Apariencia](/es/guides/appearance/#claro-u-oscuro-desde-el-launcher) | |
-| `/` | Filtrar las tarjetas | Filtrar las tarjetas |
-| `Esc` | Borrar el filtro | Borrar el filtro, después volver a los proyectos |
+| `/` | Buscar en la lista | Buscar en la lista |
+| `Esc` | Borrar la búsqueda | Borrar la búsqueda, después volver a los proyectos |
 | `q` | Salir, cerrando la ventana de f0.app | Salir, cerrando la ventana de f0.app |
 
 En la lista de repositorios que muestra `a`, `Enter` agrega uno, `p` toma una carpeta que escribes y `Esc` vuelve.
@@ -74,9 +74,9 @@ Valen en f0.app, desde su propia configuración, y en tu Ghostty cuando está en
 | `Space fg` | Buscar texto en el proyecto |
 | `Space fb` | Buffers abiertos |
 | `Space fr` | Archivos recientes |
-| `Space e` | Muestra u oculta el explorador |
+| `Space e` | Muestra u oculta el explorador, en lugar del panel de cambios |
 | `Space gm` | Muestra u oculta el panel de cambios |
-| `Space ui` | Restaura el layout de tres columnas |
+| `Space ui` | Vuelve al panel de cambios |
 | `Space un` | Muestra u oculta los números de línea (relativos), para movimientos con cuenta como `5j` |
 | `Shift-l` / `Shift-h` | Buffer siguiente / anterior |
 | `Space bd` | Cierra el buffer; si tiene cambios sin guardar, pregunta si guardar, descartar o cancelar |
