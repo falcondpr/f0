@@ -6,6 +6,8 @@ return {
     "MunifTanjim/nui.nvim",
   },
   config = function()
+    local side_width = require("f0.panels").side_width
+
     require("neo-tree").setup({
       close_if_last_window = true,
       -- La raíz repetía la ruta (`GIT STATUS for ~/…`), que ya muestran el título del
@@ -77,12 +79,12 @@ return {
       },
 
       window = {
-        width = 38,
+        width = side_width,
       },
       filesystem = {
         window = {
           position = "right",
-          width = 38,
+          width = side_width,
         },
         filtered_items = {
           visible = true,
@@ -97,7 +99,7 @@ return {
       git_status = {
         window = {
           position = "left",
-          width = 34,
+          width = side_width,
         },
       },
     })

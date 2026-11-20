@@ -28,7 +28,9 @@ return {
     },
     file_panel = {
       listing_style = "tree",
-      win_config = { position = "left", width = 34 },
+      win_config = function()
+        return { position = "left", width = require("f0.panels").side_width() }
+      end,
     },
   },
 }
