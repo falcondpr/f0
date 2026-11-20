@@ -1,0 +1,24 @@
+# f0 dark: neutral greys and one blue accent. The same values are in
+# config/tmux/appearance.sh, config/tmux/tmux.conf and the Neovim colorscheme.
+background = #1f1f1f
+foreground = #d4d4d4
+cursor-color = #d4d4d4
+cursor-text = #1f1f1f
+selection-background = #2a2d3a
+selection-foreground = #d4d4d4
+palette = 0=#3a3a3a
+palette = 1=#f14c4c
+palette = 2=#8cc265
+palette = 3=#d7ba7d
+palette = 4=#4daafc
+palette = 5=#c586c0
+palette = 6=#4ec9b0
+palette = 7=#b0b0b0
+palette = 8=#767676
+palette = 9=#ff6b6b
+palette = 10=#a4d68a
+palette = 11=#e5cc95
+palette = 12=#75beff
+palette = 13=#d6a2d2
+palette = 14=#6fd8c4
+palette = 15=#e0e0e0

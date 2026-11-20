@@ -3,7 +3,6 @@ return {
   branch = "v3.x",
   dependencies = {
     "nvim-lua/plenary.nvim",
-    "nvim-tree/nvim-web-devicons",
     "MunifTanjim/nui.nvim",
   },
   config = function()
@@ -14,6 +13,20 @@ return {
       hide_root_node = true,
 
       default_component_configs = {
+        -- Una lista simple: sin íconos de archivo ni guías, las carpetas con una
+        -- flecha. Los archivos llevan un espacio en el lugar del ícono para quedar
+        -- alineados con el nombre de las carpetas.
+        indent = {
+          with_markers = false,
+        },
+        icon = {
+          folder_closed = "›",
+          folder_open = "⌄",
+          folder_empty = "›",
+          folder_empty_open = "⌄",
+          default = " ",
+          provider = function() end,
+        },
         -- Una sola marca por archivo: la letra del cambio en su color. Los símbolos de
         -- stage repetían lo mismo con otro ícono; staged vs. unstaged se ve en diffview.
         git_status = {

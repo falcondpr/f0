@@ -142,6 +142,7 @@ write_app_config() {
   tmp="$(mktemp)"
   sed -e "s|@F0_BIN@|$(sed_escape "$CARGO_BIN/f0")|g" \
       -e "s|@F0_ICON@|$(sed_escape "$APP/Contents/Resources/f0.icns")|g" \
+      -e "s|@F0_THEMES@|$(sed_escape "$ROOT/config/ghostty/themes")|g" \
       "$ROOT/config/ghostty/f0.conf" >"$tmp"
   if [ -f "$dst" ] && cmp -s "$tmp" "$dst"; then
     rm "$tmp"
@@ -187,7 +188,13 @@ fi
 
 if [ "$with_nvim" = 1 ]; then link "$ROOT/config/nvim" "$CONFIG/nvim"; fi
 if [ "$with_tmux" = 1 ]; then link "$ROOT/config/tmux" "$CONFIG/tmux"; fi
-if [ "$with_ghostty" = 1 ]; then link "$ROOT/config/ghostty/config" "$CONFIG/ghostty/config"; fi
+if [ "$with_ghostty" = 1 ]; then
+  link "$ROOT/config/ghostty/config" "$CONFIG/ghostty/config"
+  # One link per theme, so themes of your own in the same folder stay.
+  for theme in f0-light f0-dark; do
+    link "$ROOT/config/ghostty/themes/$theme" "$CONFIG/ghostty/themes/$theme"
+  done
+fi
 
 mkdir -p "$CONFIG/f0/projects"
 

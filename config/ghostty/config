@@ -1,6 +1,9 @@
 # f0 additions. The theme follows the macOS appearance and matches the tmux and
 # Neovim configs; colors set in your own Ghostty config file override it.
-theme = light:Catppuccin Latte,dark:Catppuccin Mocha
+# The f0 themes are in config/ghostty/themes, linked by install.sh.
+theme = light:f0-light,dark:f0-dark
+# The title sits on the window color instead of a bar of another shade.
+macos-titlebar-style = transparent
 font-family = JetBrainsMono Nerd Font
 font-size = 14
 window-padding-x = 12

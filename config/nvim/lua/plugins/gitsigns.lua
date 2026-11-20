@@ -2,7 +2,14 @@ return {
   "lewis6991/gitsigns.nvim",
   event = { "BufReadPre", "BufNewFile" },
   config = function()
+    -- Una barra fina en la columna de signos; el color dice qué cambió.
+    local bar = { text = "▎" }
+    local signs = {
+      add = bar, change = bar, delete = bar, topdelete = bar, changedelete = bar, untracked = bar,
+    }
     require("gitsigns").setup({
+      signs = signs,
+      signs_staged = signs,
       on_attach = function(bufnr)
         local gs = require("gitsigns")
         local function map(mode, l, r, desc)
