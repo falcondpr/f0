@@ -126,14 +126,37 @@ pub enum F0Error {
     )]
     InvalidProjectName { name: String },
 
-    #[error("`{key}` is not a tmux key; set `[keys] done` in config.toml to another, or `false`")]
-    InvalidKey { key: String },
+    #[error("`{key}` is not a tmux key; set `[keys] {name}` in config.toml to another, or `false`")]
+    InvalidKey { name: &'static str, key: String },
 
     #[error(
         "tmux already binds `{key}` after the prefix to something else ({binding}); set \
-         `[keys] done` in config.toml to another key, or `false`"
+         `[keys] {name}` in config.toml to another key, or `false`"
     )]
-    KeyTaken { key: String, binding: String },
+    KeyTaken {
+        name: &'static str,
+        key: String,
+        binding: String,
+    },
+
+    #[error("{path}: `[keys] done` and `[keys] agent` are both `{key}`; give them different keys")]
+    SameKey { path: PathBuf, key: String },
+
+    #[error(
+        "`f0 agent` adds an agent to the session of a task, so run it in one of its panes; \
+         open the task with `f0 open` or from f0.app"
+    )]
+    NotInSession,
+
+    #[error("tmux session `{session}` has no agent pane to start another agent under")]
+    NoAgentPane { session: String },
+
+    #[error("could not update {path}: {source}")]
+    AgentsFile {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
 
     #[error("could not determine the home directory")]
     NoHomeDir,

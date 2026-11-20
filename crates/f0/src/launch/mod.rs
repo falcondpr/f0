@@ -155,13 +155,13 @@ fn perform(
         Action::Open(slot) => {
             let target = slot.to_string_lossy().into_owned();
             let result = suspended(term, || {
-                commands::open(Some(&target), &[], None, Attach::Wait)
+                commands::open(Some(&target), &[], &[], Attach::Wait)
             })?;
             back_home(state, app, term, palette, result)?;
         }
         Action::New { project, ticket } => {
             let result = suspended(term, || {
-                commands::new(&ticket, Some(&project), None, None, &[], None, Attach::Wait)
+                commands::new(&ticket, Some(&project), None, None, &[], &[], Attach::Wait)
             })?;
             back_home(state, app, term, palette, result)?;
         }

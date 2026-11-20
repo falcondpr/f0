@@ -117,12 +117,17 @@ pub struct Keys {
     /// written as `false`.
     #[serde(deserialize_with = "key_or_off")]
     pub done: Option<String>,
+    /// Asks for an agent and starts it under the others, like `f0 agent`. `None` when
+    /// written as `false`.
+    #[serde(deserialize_with = "key_or_off")]
+    pub agent: Option<String>,
 }
 
 impl Default for Keys {
     fn default() -> Self {
         Self {
             done: Some("X".to_owned()),
+            agent: Some("A".to_owned()),
         }
     }
 }
@@ -696,6 +701,14 @@ fn parse_global(source: &str, path: &Path) -> Result<GlobalFile, F0Error> {
         source: Box::new(e),
     })?;
     validate("defaults", &[], &file.defaults.layout)?;
+    if let Some(key) = &file.keys.done
+        && file.keys.agent.as_ref() == Some(key)
+    {
+        return Err(F0Error::SameKey {
+            path: path.to_owned(),
+            key: key.clone(),
+        });
+    }
     Ok(file)
 }
 
@@ -992,6 +1005,24 @@ mod tests {
         ] {
             assert!(keys(&format!("[keys]\n{bad}")).is_err(), "{bad}");
         }
+    }
+
+    #[test]
+    fn agent_key_defaults_to_a_and_cannot_repeat_the_done_key() {
+        let path = Path::new("config.toml");
+        let keys = |source: &str| parse_global(source, path).map(|file| file.keys);
+        assert_eq!(keys("").unwrap().agent.as_deref(), Some("A"));
+        assert_eq!(keys("[keys]\nagent = false").unwrap().agent, None);
+        assert_eq!(
+            keys("[keys]\nagent = \"M-a\"").unwrap().agent.as_deref(),
+            Some("M-a")
+        );
+        assert!(matches!(
+            keys("[keys]\nagent = \"X\""),
+            Err(F0Error::SameKey { .. })
+        ));
+        assert!(keys("[keys]\ndone = false\nagent = \"X\"").is_ok());
+        assert!(keys("[keys]\nagent = \"\"").is_err());
     }
 
     #[test]

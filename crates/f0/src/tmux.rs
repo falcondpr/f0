@@ -4,14 +4,68 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use crate::error::F0Error;
-use crate::layout::{Direction, Layout};
+use crate::layout::{Direction, Layout, Pane};
 use crate::process;
 
 const PATH_OPTION: &str = "@f0_path";
-/// The key f0 last bound to close a task, kept on the tmux server so a changed or
-/// turned off `[keys] done` can unbind it.
-const DONE_KEY_OPTION: &str = "@f0_done_key";
+/// Set on the panes of agents, with the command of each.
+const AGENT_OPTION: &str = "@f0_agent";
+const AGENT_PROMPT: &str = "Agent (Enter for the project's): ";
 const DEFAULT_SIZE: (u16, u16) = (240, 60);
+
+/// A key f0 binds after the prefix, for the f0 session it is pressed in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum F0Key {
+    /// Closes the task, like `f0 done`.
+    Done,
+    /// Starts another agent, like `f0 agent`.
+    Agent,
+}
+
+impl F0Key {
+    /// Its name under `[keys]` in config.toml.
+    pub fn name(self) -> &'static str {
+        match self {
+            F0Key::Done => "done",
+            F0Key::Agent => "agent",
+        }
+    }
+
+    /// The key f0 last bound for it, kept on the tmux server so a changed or turned off
+    /// key can be unbound.
+    fn option(self) -> &'static str {
+        match self {
+            F0Key::Done => "@f0_done_key",
+            F0Key::Agent => "@f0_agent_key",
+        }
+    }
+
+    fn command(self, exe: &str) -> String {
+        match self {
+            F0Key::Done => done_command(exe),
+            F0Key::Agent => agent_command(exe),
+        }
+    }
+
+    /// Whether `binding`, as `list-keys` prints it, runs this key's f0 command.
+    fn is_bound_in(self, binding: &str) -> bool {
+        is_f0_binding(binding)
+            && match self {
+                F0Key::Done => binding.contains(" done ") || binding.contains(" close-menu "),
+                F0Key::Agent => binding.contains(" agent "),
+            }
+    }
+}
+
+/// An agent pane of a running session.
+#[derive(Debug, Clone, PartialEq)]
+pub struct AgentPane {
+    pub id: String,
+    /// `None` for an agent pane of a session an older f0 built, known only by its title.
+    pub cmd: Option<String>,
+    pub top: u16,
+    pub height: u16,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Session {
@@ -208,29 +262,30 @@ pub fn prefix() -> Result<String, F0Error> {
     tmux(&["show-options", "-gv", "prefix"])
 }
 
-/// Binds `key`, after the prefix, to `f0 done` for the session it is pressed in, and
-/// unbinds the key an earlier f0 bound when it is a different one. `None` only unbinds.
-/// It never replaces a key bound to something else.
-pub fn bind_done(key: Option<&str>, exe: &str) -> Result<(), F0Error> {
-    let previous = tmux(&["show-options", "-gqv", DONE_KEY_OPTION])?;
+/// Binds `key`, after the prefix, to what `kind` does in the f0 session it is pressed
+/// in, and unbinds the key an earlier f0 bound for `kind` when it is a different one.
+/// `None` only unbinds. It never replaces a key bound to something other than f0.
+pub fn bind_key(kind: F0Key, key: Option<&str>, exe: &str) -> Result<(), F0Error> {
+    let previous = tmux(&["show-options", "-gqv", kind.option()])?;
     if !previous.is_empty()
         && Some(previous.as_str()) != key
-        && prefix_binding(&previous)?.is_some_and(|binding| is_f0_binding(&binding))
+        && prefix_binding(&previous)?.is_some_and(|binding| kind.is_bound_in(&binding))
     {
         tmux(&["unbind-key", "-T", "prefix", &previous])?;
     }
     let Some(key) = key else {
-        return tmux(&["set-option", "-gu", DONE_KEY_OPTION]).map(drop);
+        return tmux(&["set-option", "-gu", kind.option()]).map(drop);
     };
     if let Some(binding) = prefix_binding(key)?
         && !is_f0_binding(&binding)
     {
         return Err(F0Error::KeyTaken {
+            name: kind.name(),
             key: key.to_owned(),
             binding,
         });
     }
-    let run = done_command(exe);
+    let run = kind.command(exe);
     tmux(&[
         "bind-key",
         "-T",
@@ -245,12 +300,13 @@ pub fn bind_done(key: Option<&str>, exe: &str) -> Result<(), F0Error> {
     .map_err(|e| match e {
         F0Error::CommandFailed { stderr, .. } if stderr.starts_with("unknown key") => {
             F0Error::InvalidKey {
+                name: kind.name(),
                 key: key.to_owned(),
             }
         }
         e => e,
     })?;
-    tmux(&["set-option", "-g", DONE_KEY_OPTION, key]).map(drop)
+    tmux(&["set-option", "-g", kind.option(), key]).map(drop)
 }
 
 /// What `key` does after the prefix, as `list-keys` prints it; `None` when unbound.
@@ -266,28 +322,30 @@ pub fn prefix_binding(key: &str) -> Result<Option<String>, F0Error> {
     }
 }
 
-/// Binding from `bind_done`, or from the `bind X` block older f0 tmux configs had, which
+/// Binding from `bind_key`, or from the `bind X` block older f0 tmux configs had, which
 /// ran `f0 done`.
 pub fn is_f0_binding(binding: &str) -> bool {
     binding.contains(PATH_OPTION)
-        && (binding.contains(" done ") || binding.contains(" close-menu "))
+        && (binding.contains(" done ")
+            || binding.contains(" close-menu ")
+            || binding.contains(" agent "))
 }
 
-/// Puts `key` at the start of the status line of `session`, before the global
+/// Puts `keys` at the start of the status line of `session`, before the global
 /// `status-right`, which gets that much more room so its end is not cut. Built from the
-/// global values every time, so applying it again does not repeat it. `None` brings back
+/// global values every time, so applying it again does not repeat it. No keys bring back
 /// the global status line.
-pub fn show_done_hint(session: &str, key: Option<&str>) -> Result<(), F0Error> {
+pub fn show_key_hints(session: &str, keys: &[(F0Key, &str)]) -> Result<(), F0Error> {
     let target = format!("{}:", exact(session));
-    let Some(key) = key else {
+    if keys.is_empty() {
         tmux(&["set-option", "-u", "-t", &target, "status-right"])?;
         return tmux(&["set-option", "-u", "-t", &target, "status-right-length"]).map(drop);
-    };
+    }
     let status = process::line_output("tmux", ["show-options", "-gv", "status-right"], None)?;
     let length: usize = tmux(&["show-options", "-gv", "status-right-length"])?
         .parse()
         .unwrap_or_default();
-    let hint = done_hint(&prefix()?, key);
+    let hint = key_hints(&prefix()?, keys);
     tmux(&[
         "set-option",
         "-t",
@@ -305,8 +363,16 @@ pub fn show_done_hint(session: &str, key: Option<&str>) -> Result<(), F0Error> {
     .map(drop)
 }
 
-fn done_hint(prefix: &str, key: &str) -> String {
-    format!("{prefix} {key} close task  ")
+fn key_hints(prefix: &str, keys: &[(F0Key, &str)]) -> String {
+    keys.iter()
+        .map(|(kind, key)| {
+            let what = match kind {
+                F0Key::Done => "close task",
+                F0Key::Agent => "new agent",
+            };
+            format!("{prefix} {key} {what}  ")
+        })
+        .collect()
 }
 
 /// The command a pressed key runs: f0 shows the menu of ways to close the task.
@@ -320,6 +386,22 @@ fn done_command(exe: &str) -> String {
         shell_quote(&exe.replace('#', "##"))
     );
     format!("run-shell -b {}", quote(&job))
+}
+
+/// The command a pressed key runs to start another agent: it asks for one in the status
+/// line, then runs `f0 agent` with the answer for the pane the key was pressed in.
+/// `%%%` is the answer with its quotes escaped for tmux; the shell splits it into words,
+/// which `f0 agent` joins back. An empty answer starts the project's agent.
+fn agent_command(exe: &str) -> String {
+    let job = format!(
+        "TMUX_PANE=#{{pane_id}} {} agent -- %%% 2>&1",
+        shell_quote(&exe.replace('#', "##"))
+    );
+    format!(
+        "command-prompt -p {} {}",
+        quote(AGENT_PROMPT),
+        quote(&format!("run-shell -b {}", quote(&job)))
+    )
 }
 
 /// A shell command line that runs `args` in the terminal of a client that left tmux, and
@@ -427,33 +509,125 @@ pub fn create_session(name: &str, worktree: &Path, layout: &Layout) -> Result<()
     }
 
     for (pane, id) in layout.panes.iter().zip(&ids) {
-        // Agents like Claude Code retitle their pane with escape sequences; the title
-        // f0 sets is what tells the panes apart. tmux before 3.4 lacks the option.
-        let _ = tmux(&["set-option", "-p", "-t", id, "allow-set-title", "off"]);
-        // Uppercase like the panel titles of an editor; tmux formats cannot change case.
-        tmux(&["select-pane", "-t", id, "-T", &pane.title.to_uppercase()])?;
-        // Ctrl-d at an empty prompt would otherwise close the pane and collapse the
-        // layout; `kill-pane` still closes it on purpose. `pane-died` only fires on panes
-        // that remain on exit.
-        tmux(&["set-option", "-p", "-t", id, "remain-on-exit", "on"])?;
-        tmux(&[
-            "set-hook",
-            "-p",
-            "-t",
-            id,
-            "pane-died",
-            &restart_hook(pane.restart.as_deref()),
-        ])?;
-        if let Some(command) = &pane.command {
-            tmux(&["send-keys", "-t", id, "-l", command])?;
-            if pane.run {
-                tmux(&["send-keys", "-t", id, "Enter"])?;
-            }
-        }
+        setup_pane(id, pane)?;
     }
 
     tmux(&["select-pane", "-t", &ids[layout.focus]])?;
     Ok(())
+}
+
+/// Titles the pane `id`, keeps it on exit, and types its command.
+fn setup_pane(id: &str, pane: &Pane) -> Result<(), F0Error> {
+    // Agents like Claude Code retitle their pane with escape sequences; the title
+    // f0 sets is what tells the panes apart. tmux before 3.4 lacks the option.
+    let _ = tmux(&["set-option", "-p", "-t", id, "allow-set-title", "off"]);
+    // Uppercase like the panel titles of an editor; tmux formats cannot change case.
+    tmux(&["select-pane", "-t", id, "-T", &pane.title.to_uppercase()])?;
+    if let Some(agent) = &pane.agent {
+        tmux(&["set-option", "-p", "-t", id, AGENT_OPTION, agent])?;
+    }
+    // Ctrl-d at an empty prompt would otherwise close the pane and collapse the
+    // layout; `kill-pane` still closes it on purpose. `pane-died` only fires on panes
+    // that remain on exit.
+    tmux(&["set-option", "-p", "-t", id, "remain-on-exit", "on"])?;
+    tmux(&[
+        "set-hook",
+        "-p",
+        "-t",
+        id,
+        "pane-died",
+        &restart_hook(pane.restart.as_deref()),
+    ])?;
+    if let Some(command) = &pane.command {
+        tmux(&["send-keys", "-t", id, "-l", command])?;
+        if pane.run {
+            tmux(&["send-keys", "-t", id, "Enter"])?;
+        }
+    }
+    Ok(())
+}
+
+/// The agent panes of `session`, top to bottom.
+pub fn agent_panes(session: &str) -> Result<Vec<AgentPane>, F0Error> {
+    let format = format!(
+        "#{{pane_id}}\t#{{pane_top}}\t#{{pane_height}}\t#{{{AGENT_OPTION}}}\t#{{pane_title}}"
+    );
+    let out = process::line_output(
+        "tmux",
+        ["list-panes", "-s", "-t", &exact(session), "-F", &format],
+        None,
+    )?;
+    Ok(parse_agent_panes(&out))
+}
+
+/// Starts `pane` under the agents of `session`, gives every agent the same height, and
+/// moves to it.
+pub fn add_agent(session: &str, pane: &Pane) -> Result<(), F0Error> {
+    let last = agent_panes(session)?
+        .pop()
+        .ok_or_else(|| F0Error::NoAgentPane {
+            session: session.to_owned(),
+        })?;
+    let cwd = pane.cwd.to_string_lossy();
+    let id = tmux(&[
+        "split-window",
+        "-v",
+        "-c",
+        &cwd,
+        "-t",
+        &last.id,
+        "-P",
+        "-F",
+        "#{pane_id}",
+    ])?;
+    setup_pane(&id, pane)?;
+
+    let agents = agent_panes(session)?;
+    let total = agents.iter().map(|a| usize::from(a.height)).sum::<usize>() + agents.len() - 1;
+    // Top to bottom, each resize gives rows to or takes them from the pane under it, so
+    // the last one ends up with what is left.
+    let heights = even_heights(total, agents.len());
+    for (agent, height) in agents.iter().zip(heights).take(agents.len() - 1) {
+        tmux(&["resize-pane", "-t", &agent.id, "-y", &height.to_string()])?;
+    }
+    tmux(&["select-pane", "-t", &id]).map(drop)
+}
+
+/// Heights for `count` panes stacked in `total` rows, with a border row between each
+/// pair; the top panes take the rows left over.
+fn even_heights(total: usize, count: usize) -> Vec<usize> {
+    if count == 0 {
+        return Vec::new();
+    }
+    let rows = total.saturating_sub(count - 1);
+    (0..count)
+        .map(|index| rows / count + usize::from(index < rows % count))
+        .collect()
+}
+
+/// Panes marked with `AGENT_OPTION`, or titled like an agent by an older f0, sorted top
+/// to bottom.
+fn parse_agent_panes(out: &str) -> Vec<AgentPane> {
+    let mut panes: Vec<AgentPane> = out
+        .lines()
+        .filter_map(|line| {
+            let mut fields = line.splitn(5, '\t');
+            let (id, top, height) = (fields.next()?, fields.next()?, fields.next()?);
+            let cmd = fields.next().unwrap_or_default();
+            let title = fields.next().unwrap_or_default();
+            if cmd.is_empty() && !title.starts_with("AGENT: ") {
+                return None;
+            }
+            Some(AgentPane {
+                id: id.to_owned(),
+                cmd: (!cmd.is_empty()).then(|| cmd.to_owned()),
+                top: top.parse().ok()?,
+                height: height.parse().ok()?,
+            })
+        })
+        .collect();
+    panes.sort_by_key(|pane| pane.top);
+    panes
 }
 
 pub fn kill_session(name: &str) -> Result<(), F0Error> {
@@ -634,8 +808,70 @@ mod tests {
     }
 
     #[test]
-    fn hint_names_the_prefix_and_the_key() {
-        assert_eq!(done_hint("C-a", "X"), "C-a X close task  ");
+    fn agent_command_asks_then_runs_this_f0_for_the_pressed_pane() {
+        assert_eq!(
+            agent_command("/a b/f0"),
+            r##"command-prompt -p "Agent (Enter for the project's): " "run-shell -b \"TMUX_PANE=#{pane_id} '/a b/f0' agent -- %%% 2>&1\"""##
+        );
+    }
+
+    #[test]
+    fn each_key_knows_its_own_binding() {
+        let bound = |kind: F0Key| {
+            format!(
+                "bind-key -T prefix A if-shell -F \"#{{@f0_path}}\" {}",
+                kind.command("/bin/f0")
+            )
+        };
+        let (agent, done) = (bound(F0Key::Agent), bound(F0Key::Done));
+        assert!(is_f0_binding(&agent));
+        assert!(F0Key::Agent.is_bound_in(&agent));
+        assert!(!F0Key::Done.is_bound_in(&agent));
+        assert!(F0Key::Done.is_bound_in(&done));
+        assert!(!F0Key::Agent.is_bound_in(&done));
+    }
+
+    #[test]
+    fn hints_name_the_prefix_and_each_key() {
+        assert_eq!(
+            key_hints("C-a", &[(F0Key::Done, "X")]),
+            "C-a X close task  "
+        );
+        assert_eq!(
+            key_hints("C-a", &[(F0Key::Done, "X"), (F0Key::Agent, "A")]),
+            "C-a X close task  C-a A new agent  "
+        );
+    }
+
+    #[test]
+    fn agent_panes_are_marked_or_titled_and_sorted_top_down() {
+        let out = "%1\t0\t40\t\tEDITOR\n\
+                   %5\t31\t29\tcodex --full-auto\tAGENT: CODEX\n\
+                   %2\t41\t18\t\tSHELL\n\
+                   %3\t0\t30\tclaude\tAGENT: CLAUDE\n\
+                   %9\t12\t5\t\tAGENT: OLD";
+        let summary: Vec<_> = parse_agent_panes(out)
+            .into_iter()
+            .map(|p| (p.id, p.cmd, p.height))
+            .collect();
+        assert_eq!(
+            summary,
+            [
+                ("%3".to_owned(), Some("claude".to_owned()), 30),
+                ("%9".to_owned(), None, 5),
+                ("%5".to_owned(), Some("codex --full-auto".to_owned()), 29)
+            ]
+        );
+    }
+
+    #[test]
+    fn even_heights_fill_the_column_minus_borders() {
+        assert_eq!(even_heights(40, 1), [40]);
+        assert_eq!(even_heights(41, 2), [20, 20]);
+        assert_eq!(even_heights(42, 2), [21, 20]);
+        assert_eq!(even_heights(44, 3), [14, 14, 14]);
+        assert_eq!(even_heights(46, 3), [15, 15, 14]);
+        assert!(even_heights(10, 0).is_empty());
     }
 
     #[test]

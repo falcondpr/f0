@@ -3,11 +3,11 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, bail};
 
-use crate::config::{self, Agent, Project};
+use crate::config::{self, Agent, Keys, Project};
 use crate::error::F0Error;
-use crate::tmux::{Attach, Session};
+use crate::tmux::{Attach, F0Key, Session};
 use crate::treehouse::Slot;
-use crate::{appearance, git, layout, process, tmux, treehouse};
+use crate::{agents, appearance, git, layout, process, tmux, treehouse};
 
 pub fn new(
     ticket: &str,
@@ -15,7 +15,7 @@ pub fn new(
     base: Option<String>,
     kind: Option<&str>,
     start: &[String],
-    agent: Option<String>,
+    agent_cmds: &[String],
     attach: Attach,
 ) -> anyhow::Result<()> {
     require_treehouse()?;
@@ -28,13 +28,11 @@ pub fn new(
     if base.is_some() {
         project.base = base;
     }
-    if let Some(cmd) = agent {
-        project.agent = Agent::new(cmd);
-    }
     project.ensure_filled()?;
     project.check_start(start)?;
     let branch = project.branch_for(ticket, kind)?;
-    require_agent(&project)?;
+    let agents = session_agents(&project, agent_cmds, &[]);
+    require_agents(&agents)?;
 
     let include = project.worktree_include();
     if !include.exists() {
@@ -50,15 +48,13 @@ pub fn new(
         return Err(F0Error::SessionExists { name }.into());
     }
 
-    let worktree = lease_for(&project, &branch, &format!("f0:{name}"), base_given)?;
-    start_session(
+    let worktree = canonical(&lease_for(
         &project,
-        &name,
-        &canonical(&worktree)?,
-        start,
-        false,
-        attach,
-    )
+        &branch,
+        &format!("f0:{name}"),
+        base_given,
+    )?)?;
+    start_session(&project, &name, &worktree, start, &agents, false, attach)
 }
 
 /// Leases a slot for `branch`. A branch that already exists, from a task returned
@@ -101,7 +97,7 @@ fn lease_for(
 pub fn open(
     target: Option<&str>,
     start: &[String],
-    agent: Option<String>,
+    agent_cmds: &[String],
     attach: Attach,
 ) -> anyhow::Result<()> {
     require_treehouse()?;
@@ -111,10 +107,10 @@ pub fn open(
     let root = resolve_slot(target, &projects)?;
 
     if let Some(session) = tmux::sessions_for(&root)?.into_iter().next() {
-        if !start.is_empty() || agent.is_some() {
+        if !start.is_empty() || !agent_cmds.is_empty() {
             eprintln!(
-                "{} is already running, so --start and --agent do nothing; close it with \
-                 `f0 done` or tmux to rebuild it",
+                "{} is already running, so --start and --agent do nothing; add an agent \
+                 with `f0 agent` in one of its panes, or close it with `f0 stop` to rebuild it",
                 session.name
             );
         }
@@ -123,14 +119,16 @@ pub fn open(
         return attach_if(&session.name, attach);
     }
 
-    let mut project =
+    let project =
         config::find_by_repo(&projects, &git::main_repo_root(&root)?, &config_dir)?.clone();
-    if let Some(cmd) = agent {
-        project.agent = Agent::new(cmd);
-    }
     project.ensure_filled()?;
     project.check_start(start)?;
-    require_agent(&project)?;
+    let saved = agents::load(&root).unwrap_or_else(|e| {
+        eprintln!("Could not read the agents of the slot, so it gets the project's: {e}");
+        Vec::new()
+    });
+    let agents = session_agents(&project, agent_cmds, &saved);
+    require_agents(&agents)?;
     if !is_treehouse_slot(&project.repo, &root)? {
         return Err(F0Error::NotASlot { path: root }.into());
     }
@@ -143,7 +141,71 @@ pub fn open(
     if tmux::has_session(&name) {
         return Err(F0Error::SessionExists { name }.into());
     }
-    start_session(&project, &name, &root, start, true, attach)
+    start_session(&project, &name, &root, start, &agents, true, attach)
+}
+
+/// The agents of a session, top to bottom: the ones given with `--agent`, else the ones
+/// saved for the slot, else the project's. A command equal to the project's agent keeps
+/// its `resume`.
+fn session_agents(project: &Project, given: &[String], saved: &[String]) -> Vec<Agent> {
+    let cmds = if given.is_empty() { saved } else { given };
+    if cmds.is_empty() {
+        return vec![project.agent.clone()];
+    }
+    cmds.iter().map(|cmd| agent_for(project, cmd)).collect()
+}
+
+fn agent_for(project: &Project, cmd: &str) -> Agent {
+    if cmd == project.agent.cmd {
+        project.agent.clone()
+    } else {
+        Agent::new(cmd)
+    }
+}
+
+/// Starts another agent under the ones of the task session this runs in: `cmd`, or the
+/// project's agent when it is empty.
+pub fn agent(cmd: &str) -> anyhow::Result<()> {
+    let session = tmux::current_session().ok_or(F0Error::NotInSession)?;
+    let root = tmux::sessions()?
+        .into_iter()
+        .find(|s| s.name == session)
+        .map(|s| s.path)
+        .ok_or(F0Error::NotInSession)?;
+    let config_dir = config::config_dir()?;
+    let defaults = config::load_defaults(&config_dir)?;
+    let projects = config::load_projects(&config_dir, &defaults)?;
+    let project = config::find_by_repo(&projects, &git::main_repo_root(&root)?, &config_dir)?;
+    let agent = match cmd.trim() {
+        "" => project.agent.clone(),
+        cmd => agent_for(project, cmd),
+    };
+    require_agents(std::slice::from_ref(&agent))?;
+
+    let mut cmds = live_agents(&session, project)?;
+    cmds.push(agent.cmd.clone());
+    let running: Vec<Agent> = cmds.iter().map(Agent::new).collect();
+    let programs: Vec<&str> = running.iter().map(Agent::program).collect();
+    let title = layout::agent_titles(&programs).pop().unwrap_or_default();
+    tmux::add_agent(&session, &layout::agent_pane(&agent, title, &root, false))?;
+    save_agents_or_warn(&root, &cmds);
+    Ok(())
+}
+
+/// The commands of the agents running in `session`, top to bottom. An agent pane from an
+/// older f0 does not say what it runs, so it counts as the project's agent.
+fn live_agents(session: &str, project: &Project) -> Result<Vec<String>, F0Error> {
+    Ok(tmux::agent_panes(session)?
+        .into_iter()
+        .map(|pane| pane.cmd.unwrap_or_else(|| project.agent.cmd.clone()))
+        .collect())
+}
+
+/// The session works without them; only the next `f0 open` would miss them.
+fn save_agents_or_warn(root: &Path, cmds: &[String]) {
+    if let Err(e) = agents::save(root, cmds) {
+        eprintln!("The next `f0 open` will not bring back these agents: {e}");
+    }
 }
 
 /// A treehouse slot of a project, as `f0 ls` and the launcher show it.
@@ -359,6 +421,9 @@ pub fn done(target: Option<&str>, force: bool) -> anyhow::Result<()> {
         tmux::kill_session(&session.name)?;
     }
     treehouse::return_slot(&root, force)?;
+    if let Err(e) = agents::clear(&root) {
+        eprintln!("The next task in this slot may start with this one's agents: {e}");
+    }
     eprintln!("Returned {}", root.display());
     Ok(())
 }
@@ -405,36 +470,52 @@ pub fn keys() -> anyhow::Result<()> {
     }
     let sessions = tmux::sessions()?;
     let names: Vec<&str> = sessions.iter().map(|s| s.name.as_str()).collect();
-    match bind_keys(&names)? {
-        Some(key) => println!(
-            "{} {key} closes the task of an f0 session ({} running)",
-            tmux::prefix()?,
-            names.len()
-        ),
+    let keys = bind_keys(&names)?;
+    let prefix = tmux::prefix()?;
+    let running = names.len();
+    match keys.done {
+        Some(key) => {
+            println!("{prefix} {key} closes the task of an f0 session ({running} running)")
+        }
         None => println!("The key that closes a task is turned off in config.toml"),
+    }
+    match keys.agent {
+        Some(key) => println!("{prefix} {key} starts another agent in an f0 session"),
+        None => println!("The key that starts another agent is turned off in config.toml"),
     }
     Ok(())
 }
 
-/// The configured key that closes a task, bound on the tmux server and shown in the
-/// status line of `sessions`. `None` when `[keys] done` is `false`.
-fn bind_keys(sessions: &[&str]) -> anyhow::Result<Option<String>> {
-    let key = config::load_keys(&config::config_dir()?)?.done;
+/// The configured f0 keys, bound on the tmux server and shown in the status line of
+/// `sessions`. A key written as `false` is `None`.
+fn bind_keys(sessions: &[&str]) -> anyhow::Result<Keys> {
+    let keys = config::load_keys(&config::config_dir()?)?;
     let exe = std::env::current_exe().context("could not locate the f0 binary")?;
-    tmux::bind_done(key.as_deref(), &exe.to_string_lossy())?;
-    for session in sessions {
-        tmux::show_done_hint(session, key.as_deref())?;
+    let exe = exe.to_string_lossy();
+    let bound = key_list(&keys);
+    for (kind, key) in [(F0Key::Done, &keys.done), (F0Key::Agent, &keys.agent)] {
+        tmux::bind_key(kind, key.as_deref(), &exe)?;
     }
-    Ok(key)
+    for session in sessions {
+        tmux::show_key_hints(session, &bound)?;
+    }
+    Ok(keys)
 }
 
-/// The sessions work without the key, and `f0 done` typed in a pane closes the task too,
-/// so a failure here only warns.
-fn bind_keys_or_warn(sessions: &[&str]) -> Option<String> {
+/// The keys that are turned on, in the order the status line shows them.
+fn key_list(keys: &Keys) -> Vec<(F0Key, &str)> {
+    [(F0Key::Done, &keys.done), (F0Key::Agent, &keys.agent)]
+        .into_iter()
+        .filter_map(|(kind, key)| Some((kind, key.as_deref()?)))
+        .collect()
+}
+
+/// The sessions work without the keys, and `f0 done` or `f0 agent` typed in a pane do
+/// the same, so a failure here only warns.
+fn bind_keys_or_warn(sessions: &[&str]) -> Option<Keys> {
     bind_keys(sessions)
-        .inspect_err(|e| eprintln!("Could not bind the key that closes a task: {e:#}"))
+        .inspect_err(|e| eprintln!("Could not bind the f0 keys: {e:#}"))
         .ok()
-        .flatten()
 }
 
 /// Closes the session of a slot and keeps the slot leased, with its branch and
@@ -455,12 +536,22 @@ pub fn stop(target: Option<&str>) -> anyhow::Result<()> {
         println!("{} has no session running", root.display());
         return Ok(());
     }
-    let task = config::project_for_repo(&projects, &repo)
-        .zip(git::current_branch(&root)?)
-        .map_or_else(
-            || root.display().to_string(),
-            |(project, branch)| project.task_from_branch(&branch).to_owned(),
-        );
+    let project = config::project_for_repo(&projects, &repo);
+    // Agents closed by hand stay closed when the session is rebuilt.
+    if let Some(project) = project {
+        let live: Vec<String> = sessions
+            .iter()
+            .filter_map(|s| live_agents(&s.name, project).ok())
+            .flatten()
+            .collect();
+        if !live.is_empty() {
+            save_agents_or_warn(&root, &live);
+        }
+    }
+    let task = project.zip(git::current_branch(&root)?).map_or_else(
+        || root.display().to_string(),
+        |(project, branch)| project.task_from_branch(&branch).to_owned(),
+    );
     eprintln!("The slot stays leased; `f0 open {task}` brings the session back");
     // Closing the session this runs in ends this process, so it goes last.
     let current = tmux::current_session();
@@ -558,7 +649,9 @@ pub fn doctor() -> anyhow::Result<()> {
     problems += report_command("agent", &defaults.agent.cmd);
 
     println!("\ntmux keys");
-    problems += report_done_key(config::load_keys(&config_dir)?.done.as_deref())?;
+    let keys = config::load_keys(&config_dir)?;
+    problems += report_key(F0Key::Done, keys.done.as_deref())?;
+    problems += report_key(F0Key::Agent, keys.agent.as_deref())?;
 
     problems += report_appearance()?;
 
@@ -612,10 +705,13 @@ fn start_session(
     name: &str,
     worktree: &Path,
     start: &[String],
+    agents: &[Agent],
     resume: bool,
     attach: Attach,
 ) -> anyhow::Result<()> {
-    let layout = layout::build(project, worktree, start, resume);
+    let cmds: Vec<String> = agents.iter().map(|agent| agent.cmd.clone()).collect();
+    save_agents_or_warn(worktree, &cmds);
+    let layout = layout::build(project, worktree, start, agents, resume);
     if let Err(e) = tmux::create_session(name, worktree, &layout) {
         // A half-built session would block the next attempt with SessionExists.
         if tmux::has_session(name) {
@@ -624,8 +720,14 @@ fn start_session(
         return Err(e.into());
     }
     eprintln!("Session {name} ready at {}", worktree.display());
-    if let Some(key) = bind_keys_or_warn(&[name]) {
-        eprintln!("{} {key} in the session closes the task", tmux::prefix()?);
+    if let Some(keys) = bind_keys_or_warn(&[name]) {
+        let prefix = tmux::prefix()?;
+        if let Some(key) = keys.done {
+            eprintln!("{prefix} {key} in the session closes the task");
+        }
+        if let Some(key) = keys.agent {
+            eprintln!("{prefix} {key} starts another agent");
+        }
     }
     attach_if(name, attach)
 }
@@ -638,15 +740,17 @@ fn attach_if(name: &str, attach: Attach) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// A missing agent would leave its pane at a "command not found" prompt.
-fn require_agent(project: &Project) -> Result<(), F0Error> {
-    let program = project.agent.program();
-    if process::is_installed(program) {
-        Ok(())
-    } else {
-        Err(F0Error::MissingProgram {
-            program: program.to_owned(),
-        })
+/// A missing agent would leave its pane at a "command not found" prompt. Every agent is
+/// checked before anything is created, so a typo does not leave half a session.
+fn require_agents(agents: &[Agent]) -> Result<(), F0Error> {
+    match agents
+        .iter()
+        .find(|agent| !process::is_installed(agent.program()))
+    {
+        Some(agent) => Err(F0Error::MissingProgram {
+            program: agent.program().to_owned(),
+        }),
+        None => Ok(()),
     }
 }
 
@@ -783,24 +887,31 @@ fn report(label: &str, ok: bool, required: bool) -> u32 {
     u32::from(!ok && required)
 }
 
-/// Checks that the running tmux server has the key that closes a task.
-fn report_done_key(key: Option<&str>) -> anyhow::Result<u32> {
+/// Checks that the running tmux server has an f0 key.
+fn report_key(kind: F0Key, key: Option<&str>) -> anyhow::Result<u32> {
+    let what = match kind {
+        F0Key::Done => "close a task",
+        F0Key::Agent => "start another agent",
+    };
     let Some(key) = key else {
-        println!("  - close a task: turned off in config.toml");
+        println!("  - {what}: turned off in config.toml");
         return Ok(0);
     };
     if !tmux::server_running() {
         return Ok(report(
-            &format!("close a task with `{key}`: no tmux server running to check"),
+            &format!("{what} with `{key}`: no tmux server running to check"),
             false,
             false,
         ));
     }
-    let label = format!("{} {key} closes a task", tmux::prefix()?);
+    let label = format!("{} {key}: {what}", tmux::prefix()?);
     Ok(match tmux::prefix_binding(key)? {
         Some(binding) if tmux::is_f0_binding(&binding) => report(&label, true, true),
         Some(_) => report(
-            &format!("{label}: tmux binds it to something else; set `[keys] done` in config.toml"),
+            &format!(
+                "{label}: tmux binds it to something else; set `[keys] {}` in config.toml",
+                kind.name()
+            ),
             false,
             true,
         ),
@@ -1009,6 +1120,33 @@ mod tests {
         assert_eq!(app_check_label(Some(APP_ID)), "/Applications/f0.app");
         assert!(app_check_label(None).contains("run install.sh to build it"));
         assert!(app_check_label(Some("org.wezfurlong.wezterm")).contains("another app"));
+    }
+
+    #[test]
+    fn agents_come_from_the_flags_then_the_slot_then_the_project() {
+        let mut project = project("hubi", "/src/hubi");
+        project.agent = Agent {
+            cmd: "claude".to_owned(),
+            resume: Some("claude -r".to_owned()),
+        };
+        let cmds = |agents: Vec<Agent>| agents.into_iter().map(|a| a.cmd).collect::<Vec<_>>();
+        let given = ["codex".to_owned(), "claude".to_owned()];
+        let saved = ["opencode".to_owned()];
+        assert_eq!(cmds(session_agents(&project, &given, &saved)), given);
+        assert_eq!(cmds(session_agents(&project, &[], &saved)), saved);
+        assert_eq!(cmds(session_agents(&project, &[], &[])), ["claude"]);
+        assert_eq!(session_agents(&project, &given, &[])[1], project.agent);
+        assert_eq!(session_agents(&project, &given, &[])[0].resume, None);
+    }
+
+    #[test]
+    fn hints_list_only_the_keys_turned_on() {
+        let keys = Keys {
+            done: Some("X".to_owned()),
+            agent: None,
+        };
+        assert_eq!(key_list(&keys), [(F0Key::Done, "X")]);
+        assert_eq!(key_list(&Keys::default()).len(), 2);
     }
 
     #[test]

@@ -20,6 +20,17 @@ pub fn main_repo_root(path: &Path) -> Result<PathBuf, F0Error> {
     Ok(common.parent().map(Path::to_owned).unwrap_or(common))
 }
 
+/// The git folder of the checkout that contains `path`: `.git/worktrees/<name>` for a
+/// worktree, so what f0 keeps there belongs to that checkout only.
+pub fn git_dir(path: &Path) -> Result<PathBuf, F0Error> {
+    let dir = process::output(
+        "git",
+        ["rev-parse", "--path-format=absolute", "--git-dir"],
+        Some(path),
+    )?;
+    Ok(PathBuf::from(dir))
+}
+
 /// The branch `origin/HEAD` points to, usually the repository's default branch.
 pub fn default_branch(path: &Path) -> Option<String> {
     let head = process::output(
