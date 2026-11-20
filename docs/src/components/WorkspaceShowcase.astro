@@ -1,296 +1,1794 @@
 ---
-import { Image } from 'astro:assets';
-import workspace from '../assets/workspace.png';
-
 const copy = {
 	en: {
-		alt: 'An f0 workspace for task F0-123 of an Expo app: Neovim with the changed files, app-tabs.tsx open and the explorer, Claude Code summarizing its work on the right, and the Expo server plus three shells in the bottom row.',
-		tour: 'Workspace areas',
-		intro: 'Every task opens in this layout. Pick an area to see what it does.',
-		regions: {
-			changes: ['Changes', 'The files changed in this task, with their git status. Open one to review its diff.'],
-			file: ['File', 'The file you are working on, or a side-by-side diff that scrolls together, also sideways.'],
-			explorer: ['Explorer', 'Every file in the worktree, to browse the project and open any file.'],
-			agent: ['Agent', 'Your AI agent, already inside the task. Claude Code here, or Codex or any other CLI you set in the config.'],
-			servers: ['Servers', 'Dev servers from the project config. Each one waits for Enter, unless you start it with --start or autostart.'],
-			shells: ['Terminals', 'Shells in the same worktree, for git, tests or anything else.'],
+		alt: 'Animated demo of an f0 task: Claude Code adds retries to wallet.ts, the edit lands in Neovim and in the changes list, the new files show up in the explorer, the workspace switches to dark mode, and the server, tests, typecheck and a shell keep running in the bottom row.',
+		captions: {
+			overview: ['f0', 'one task, one worktree: agent, editor and servers in one view'],
+			agent: ['Agent', 'prompt it in plain English'],
+			editor: ['File', 'watch the edit land in Neovim'],
+			changes: ['Changes', 'pick a touched file, its diff opens in File'],
+			explorer: ['Explorer', 'new files show up as the agent writes them'],
+			terminals: ['Terminals', 'servers, tests and typecheck keep running'],
+			dark: ['Dark mode', 'same layout, your colors'],
+			done: ['f0', 'review, commit and ship without leaving the task'],
 		},
 	},
 	es: {
-		alt: 'Un espacio de trabajo de f0 para la tarea F0-123 de una app de Expo: Neovim con los archivos modificados, app-tabs.tsx abierto y el explorador, Claude Code resumiendo su trabajo a la derecha, y el servidor de Expo más tres shells en la fila de abajo.',
-		tour: 'Áreas del espacio de trabajo',
-		intro: 'Cada tarea se abre con este layout. Elegí un área para ver qué hace.',
-		regions: {
-			changes: ['Cambios', 'Los archivos modificados en esta tarea, con su estado en git. Abrí uno para revisar su diff.'],
-			file: ['Archivo', 'El archivo en el que estás trabajando, o un diff lado a lado que se desplaza en conjunto, también hacia los costados.'],
-			explorer: ['Explorador', 'Todos los archivos del worktree, para recorrer el proyecto y abrir cualquiera.'],
-			agent: ['Agente', 'Tu agente de IA, ya dentro de la tarea. Acá Claude Code, o Codex o cualquier otra CLI que configures.'],
-			servers: ['Servidores', 'Los servidores del proyecto. Cada uno espera un Enter, salvo que lo arranques con --start o autostart.'],
-			shells: ['Terminales', 'Shells en el mismo worktree, para git, tests o lo que necesites.'],
+		alt: 'Demo animada de una tarea de f0: Claude Code agrega reintentos a wallet.ts, el cambio aparece en Neovim y en la lista de cambios, los archivos nuevos aparecen en el explorador, el espacio de trabajo pasa a modo oscuro, y el servidor, los tests, el typecheck y una shell siguen corriendo en la fila de abajo.',
+		captions: {
+			overview: ['f0', 'una tarea, un worktree: agente, editor y servidores a la vista'],
+			agent: ['Agente', 'pedile lo que necesitás en lenguaje natural'],
+			editor: ['Archivo', 'mirá cómo el cambio llega a Neovim'],
+			changes: ['Cambios', 'elegí un archivo tocado y su diff se abre en Archivo'],
+			explorer: ['Explorador', 'los archivos nuevos aparecen a medida que el agente los escribe'],
+			terminals: ['Terminales', 'servidores, tests y typecheck siguen corriendo'],
+			dark: ['Modo oscuro', 'el mismo layout, tus colores'],
+			done: ['f0', 'revisá, commiteá y publicá sin salir de la tarea'],
 		},
 	},
 	'zh-CN': {
-		alt: '一个 Expo 应用中任务 F0-123 的 f0 工作区：Neovim 显示已修改的文件、打开的 app-tabs.tsx 和文件浏览器，右侧是正在总结工作的 Claude Code，底部一行是 Expo 服务器和三个 shell。',
-		tour: '工作区区域',
-		intro: '每个任务都以这个布局打开。选择一个区域，看看它的作用。',
-		regions: {
-			changes: ['改动', '此任务中修改过的文件及其 git 状态。打开一个即可审查它的 diff。'],
-			file: ['文件', '你正在编辑的文件，或同步滚动的并排 diff，横向也能一起滚动。'],
-			explorer: ['文件浏览器', 'worktree 中的所有文件，用来浏览项目并打开任意文件。'],
-			agent: ['智能体', '你的 AI 智能体，已经在任务中就位。这里是 Claude Code，也可以是 Codex 或你在配置中设置的任何其他 CLI。'],
-			servers: ['服务器', '项目配置中的开发服务器。每个都等待 Enter，除非用 --start 或 autostart 启动。'],
-			shells: ['终端', '位于同一个 worktree 中的 shell，用于 git、测试或其他任何事情。'],
+		alt: 'f0 任务的动画演示：Claude Code 为 wallet.ts 加入重试，改动出现在 Neovim 和改动列表中，新文件出现在文件浏览器里，工作区切换到深色模式，底部一行的服务器、测试、类型检查和 shell 持续运行。',
+		captions: {
+			overview: ['f0', '一个任务，一个 worktree：智能体、编辑器和服务器尽在一屏'],
+			agent: ['智能体', '用自然语言给它下指令'],
+			editor: ['文件', '看着改动落进 Neovim'],
+			changes: ['改动', '选一个改过的文件，它的 diff 会在“文件”中打开'],
+			explorer: ['文件浏览器', '智能体写入的新文件会随之出现'],
+			terminals: ['终端', '服务器、测试和类型检查持续运行'],
+			dark: ['深色模式', '同样的布局，你的配色'],
+			done: ['f0', '审查、提交、发布，全程不离开任务'],
 		},
 	},
 };
 
 // Keyed by the page's lang, which is what Astro.currentLocale returns.
 const t = copy[Astro.currentLocale as keyof typeof copy] ?? copy.en;
-const regions = Object.entries(t.regions) as [string, [string, string]][];
+const terminals = ['t1', 't2', 't3', 't4'];
 ---
 
-<f0-showcase class="not-content">
-	<div class="window">
-		<div class="titlebar" aria-hidden="true">
-			<span></span><span></span><span></span>
-			<p>f0-demo/F0-123</p>
-		</div>
-		<div class="screen">
-			<Image src={workspace} alt={t.alt} widths={[800, 1200, 2000]} sizes="(min-width: 72rem) 68rem, 100vw" loading="eager" />
-			{regions.map(([id]) => <div class="region" data-region={id} aria-hidden="true"></div>)}
+<f0-showcase class="not-content" role="img" aria-label={t.alt} data-captions={JSON.stringify(t.captions)}>
+	<div class="window" aria-hidden="true">
+		<div class="stage">
+			<div class="world">
+				<div class="win">
+					<div class="titlebar"><div class="lights"><i></i><i></i><i></i></div><span class="ttl">f0</span></div>
+					<div class="top">
+						<div class="left">
+							<div class="cols">
+								<section class="panel" data-panel="changes"></section>
+								<section class="panel" data-panel="editor"></section>
+								<section class="panel" data-panel="explorer"></section>
+							</div>
+							<div class="status">
+								<span class="mode">NORMAL</span><span class="dim">⎇ F0-123</span><span class="stfile dim"></span><span class="sp"></span><span class="pos dim">1:1</span>
+							</div>
+						</div>
+						<section class="panel" data-panel="agent"></section>
+					</div>
+					<div class="terms">
+						{terminals.map((id) => <section class="panel term" data-panel={id} />)}
+					</div>
+					<div class="bottombar">
+						<span class="foot">f0-demo/F0-123</span><span class="sp"></span><span class="dim">C-a X close task</span><span class="dim">~/.treehouse/f0-demo-3a91c/2/f0-demo</span>
+					</div>
+				</div>
+			</div>
+			<div class="cap hide"></div>
 		</div>
 	</div>
-	<div class="tour" role="group" aria-label={t.tour}>
-		{
-			regions.map(([id, [label]]) => (
-				<button type="button" data-region={id} aria-pressed="false">
-					{label}
-				</button>
-			))
-		}
-	</div>
-	<p class="caption" aria-live="polite" data-intro={t.intro}>{t.intro}</p>
-	<template>
-		{regions.map(([id, [, text]]) => <span data-region={id}>{text}</span>)}
-	</template>
 </f0-showcase>
 
 <script>
-	const TOUR_STEP_MS = 3500;
+	type CaptionKey = 'overview' | 'agent' | 'editor' | 'changes' | 'explorer' | 'terminals' | 'dark' | 'done';
+	type Captions = Record<CaptionKey, [string, string]>;
+	type Rect = { x: number; y: number; w: number; h: number };
+	type Status = 'A' | 'M' | 'R';
+	type FileType = 'ts' | 'json' | 'md' | 'env' | 'yaml';
+	type Row = { id: string; d: number; n: string; dir?: boolean; open?: boolean; h?: boolean; st?: Status; p?: number; m?: number; ft?: FileType };
+	type DiffLine = [' ' | '+' | '-' | '@', string];
+	type EditorLine = { t: string; k: '' | 'typing' | 'add' | 'del' };
+
+	// Playback speed of the whole scene; durations below are written at 1x.
+	const SPEED = 2.58;
+	const W = 1600;
+	const H = 1000;
+	const PATH = '~/.treehouse/f0-demo-3a91c/2/f0-demo';
+	const PROMPT = 'Add retry with exponential backoff to fetchBalance and cover it with tests';
+	const BRAILLE = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏';
+	const STARS = '·✢✳✶✻✽✻✶✳✢';
+	const CAPTION_STEP: Record<CaptionKey, number> = { overview: -1, agent: 0, editor: 1, changes: 2, explorer: 3, terminals: 4, dark: -1, done: -1 };
+	const FILE_LABEL: Record<FileType, string> = { ts: 'TS', json: '{}', md: 'M↓', env: '*', yaml: 'Y' };
+
+	const CHANGES: Row[] = [
+		{ id: 'src', d: 0, n: 'src', dir: true },
+		{ id: 'api', d: 1, n: 'api', dir: true },
+		{ id: 'tests', d: 2, n: '__tests__', dir: true },
+		{ id: 'wtest', d: 3, n: 'wallet.test.ts', st: 'A', p: 32 },
+		{ id: 'wallet', d: 2, n: 'wallet.ts', st: 'M', p: 5, m: 2 },
+		{ id: 'utils', d: 1, n: 'utils', dir: true },
+		{ id: 'retry', d: 2, n: 'retry.ts', st: 'A', p: 16 },
+	];
+
+	const EXPLORER: Row[] = [
+		{ id: 'expo', d: 0, n: '.expo', dir: true },
+		{ id: 'github', d: 0, n: '.github', dir: true },
+		{ id: 'app', d: 0, n: 'app', dir: true },
+		{ id: 'assets', d: 0, n: 'assets', dir: true },
+		{ id: 'nm', d: 0, n: 'node_modules', dir: true },
+		{ id: 'src', d: 0, n: 'src', dir: true },
+		{ id: 'api', d: 1, n: 'api', dir: true, h: true },
+		{ id: 'tests', d: 2, n: '__tests__', dir: true, h: true, open: true },
+		{ id: 'wtest', d: 3, n: 'wallet.test.ts', h: true, st: 'A' },
+		{ id: 'http', d: 2, n: 'http.ts', h: true },
+		{ id: 'wallet', d: 2, n: 'wallet.ts', h: true, st: 'M' },
+		{ id: 'comp', d: 1, n: 'components', dir: true, h: true },
+		{ id: 'hooks', d: 1, n: 'hooks', dir: true, h: true },
+		{ id: 'fmtA', d: 2, n: 'format.ts', h: true },
+		{ id: 'useb', d: 2, n: 'useBalance.ts', h: true },
+		{ id: 'utils', d: 1, n: 'utils', dir: true, h: true },
+		{ id: 'retry', d: 2, n: 'retry.ts', h: true, st: 'A' },
+		{ id: 'env', d: 0, n: '.env.example', ft: 'env' },
+		{ id: 'appjson', d: 0, n: 'app.json', ft: 'json' },
+		{ id: 'pkg', d: 0, n: 'package.json', ft: 'json' },
+		{ id: 'lock', d: 0, n: 'pnpm-lock.yaml', ft: 'yaml' },
+		{ id: 'tsconfig', d: 0, n: 'tsconfig.json', ft: 'json' },
+		{ id: 'readme', d: 0, n: 'README.md', ft: 'md' },
+	];
+
+	const ORIGINAL = [
+		"import { http } from './http';",
+		'',
+		'type Balance = { amount: number; currency: string };',
+		'',
+		'export async function fetchBalance(id: string) {',
+		'  const res = await http.get<Balance>(`/wallets/${id}`);',
+		'  return res;',
+		'}',
+	];
+
+	const WALLET_DIFF: DiffLine[] = [
+		['@', '@@ -1,8 +1,11 @@'],
+		[' ', "import { http } from './http';"],
+		['+', "import { withRetry } from '../utils/retry';"],
+		['@', '@@ export async function fetchBalance @@'],
+		['-', '  const res = await http.get<Balance>(`/wallets/${id}`);'],
+		['-', '  return res;'],
+		['+', '  return withRetry('],
+		['+', '    () => http.get<Balance>(`/wallets/${id}`),'],
+		['+', '    { retries: 3, baseMs: 200 },'],
+		['+', '  );'],
+	];
+
+	const RETRY_DIFF: DiffLine[] = [
+		['@', '@@ -0,0 +1,16 @@'],
+		['+', 'const sleep = (ms: number) =>'],
+		['+', '  new Promise((r) => setTimeout(r, ms));'],
+		['+', ''],
+		['+', 'export async function withRetry<T>('],
+		['+', '  fn: () => Promise<T>,'],
+		['+', '  { retries = 3, baseMs = 200 } = {},'],
+		['+', '): Promise<T> {'],
+		['+', '  for (let i = 0; ; i++) {'],
+		['+', '    try { return await fn(); }'],
+		['+', '    catch (err) {'],
+		['+', '      if (i >= retries) throw err;'],
+		['+', '      await sleep(baseMs * 2 ** i);'],
+	];
+
+	const TERMINALS: [string, string, boolean][] = [
+		['t1', 'server', true],
+		['t2', 'test', true],
+		['t3', 'typecheck', true],
+		['t4', 'shell', false],
+	];
+
+	const SERVER_LOGS = ['[wallet] balance refreshed', '[auth] session ok', '[push] token registered', '[wallet] 3 movements synced', '[net] online'];
+
+	const TOKEN = /(\/\/.*$)|(`[^`]*`?|'[^']*'?)|\b(import|from|export|type|async|function|return|await|const|let|new|throw|try|catch|for|if|of)\b|\b([A-Z]\w*)\b|\b([a-z_]\w*)(?=\s*[(<])|\b(\d+)\b/g;
+
+	const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	const now = () => new Date().toTimeString().slice(0, 8);
+
+	function el(tag: string, cls: string, html?: string) {
+		const e = document.createElement(tag);
+		e.className = cls;
+		if (html !== undefined) e.innerHTML = html;
+		return e;
+	}
+
+	function highlight(src: string) {
+		let out = '';
+		let last = 0;
+		TOKEN.lastIndex = 0;
+		for (let m = TOKEN.exec(src); m; m = TOKEN.exec(src)) {
+			if (!m[0]) {
+				TOKEN.lastIndex++;
+				continue;
+			}
+			const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'k' : m[4] ? 't' : m[5] ? 'f' : 'nu';
+			out += esc(src.slice(last, m.index)) + `<span class="${cls}">${esc(m[0])}</span>`;
+			last = TOKEN.lastIndex;
+		}
+		return out + esc(src.slice(last));
+	}
+
+	function rowHTML(r: Row, withCounts: boolean) {
+		const pad = `<span style="width:${8 + r.d * 14}px;flex:none"></span>`;
+		if (r.dir) return `${pad}<span class="chev">${r.open ? '▾' : '▸'}</span><span class="fold"></span><span class="dn nm">${r.n}</span>`;
+		const ft = r.ft ?? 'ts';
+		let right = '';
+		if (withCounts && (r.p || r.m)) {
+			right += `<span class="cnt">${r.p ? `<span class="g">+${r.p}</span>` : ''} ${r.m ? `<span class="r">-${r.m}</span>` : ''}</span>`;
+		}
+		if (r.st) right += `<span class="st st-${r.st}">${r.st}</span>`;
+		return `${pad}<span class="ft ${ft}">${FILE_LABEL[ft]}</span><span class="nm ${r.st ? 'n-' + r.st : ''}">${r.n}</span>${right}`;
+	}
+
+	function createDemo(root: HTMLElement, captions: Captions) {
+		const $ = (selector: string, scope: ParentNode = root) => scope.querySelector(selector) as HTMLElement;
+		const panel = (id: string) => $(`[data-panel="${id}"]`);
+		const stage = $('.stage');
+		const world = $('.world');
+		const cap = $('.cap');
+
+		// The scene only advances while it is on screen: every pause waits for visibility before resolving.
+		let visible = false;
+		let started = false;
+		const waiting: (() => void)[] = [];
+		const awake = () => (visible ? Promise.resolve() : new Promise<void>((resolve) => waiting.push(resolve)));
+		const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms / SPEED)).then(awake);
+
+		// CSS animations and transitions are authored at 1x too; infinite ones (cursor blink, pulse) keep their pace.
+		const speedUp = () => {
+			for (const animation of stage.getAnimations({ subtree: true })) {
+				if (animation.effect?.getTiming().iterations !== Infinity) animation.playbackRate = SPEED;
+			}
+		};
+		stage.addEventListener('animationstart', speedUp);
+		stage.addEventListener('transitionrun', speedUp);
+
+		/* camera */
+		let cam = { x: 0, y: 0, z: 1 };
+		const applyCam = () => {
+			const f = stage.clientWidth / W;
+			world.style.transform = `translate(${cam.x * f}px,${cam.y * f}px) scale(${cam.z * f})`;
+		};
+		new ResizeObserver(applyCam).observe(stage);
+
+		function tweenCam(to: typeof cam, duration: number) {
+			return new Promise<void>((resolve) => {
+				const dur = duration / SPEED;
+				const from = { ...cam };
+				const t0 = performance.now();
+				const step = () => {
+					const k = Math.min(1, (performance.now() - t0) / dur);
+					const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+					cam = { x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e, z: from.z + (to.z - from.z) * e };
+					applyCam();
+					if (k < 1) requestAnimationFrame(step);
+					else resolve();
+				};
+				requestAnimationFrame(step);
+			});
+		}
+
+		function rectOf(e: HTMLElement): Rect {
+			let x = 0;
+			let y = 0;
+			for (let n: Element | null = e; n instanceof HTMLElement && n !== world; n = n.offsetParent) {
+				x += n.offsetLeft;
+				y += n.offsetTop;
+			}
+			return { x, y, w: e.offsetWidth, h: e.offsetHeight };
+		}
+
+		// Part of a panel: `top` counts from the bottom when negative.
+		function regionOf(id: string, top: number, h?: number): Rect {
+			const r = rectOf(panel(id));
+			const y = top >= 0 ? r.y + top : r.y + r.h + top;
+			return { x: r.x, y, w: r.w, h: h ?? r.y + r.h - y };
+		}
+
+		async function focusOn(ids: string[], region?: Rect) {
+			const rs = region ? [region] : ids.map((id) => rectOf(panel(id)));
+			const x0 = Math.min(...rs.map((r) => r.x));
+			const y0 = Math.min(...rs.map((r) => r.y));
+			const w = Math.max(...rs.map((r) => r.x + r.w)) - x0;
+			const h = Math.max(...rs.map((r) => r.y + r.h)) - y0;
+			for (const p of root.querySelectorAll<HTMLElement>('.panel')) p.classList.toggle('focus', ids.includes(p.dataset.panel ?? ''));
+			world.classList.add('zoomed');
+			const z = Math.max(1, Math.min(Math.min(W / w, H / h) * 0.92, 3.2));
+			const x = Math.min(0, Math.max(W - W * z, W / 2 - (x0 + w / 2) * z));
+			const y = Math.min(0, Math.max(H - H * z, H / 2 - (y0 + h / 2) * z));
+			await tweenCam({ x, y, z }, 1200);
+		}
+
+		async function overview() {
+			world.classList.remove('zoomed');
+			for (const p of root.querySelectorAll('.panel.focus')) p.classList.remove('focus');
+			await tweenCam({ x: 0, y: 0, z: 1 }, 1200);
+		}
+
+		async function setTheme(dark: boolean) {
+			world.style.opacity = '0';
+			await sleep(320);
+			stage.classList.toggle('dark', dark);
+			world.style.opacity = '1';
+			await sleep(350);
+		}
+
+		/* caption */
+		function renderCaption(key: CaptionKey) {
+			const [label, text] = captions[key];
+			const dots = [0, 1, 2, 3, 4].map((j) => `<i class="${j === CAPTION_STEP[key] ? 'on' : ''}"></i>`).join('');
+			cap.innerHTML = `<span><b>${esc(label)}</b> · ${esc(text)}</span><span class="dots">${dots}</span>`;
+			cap.classList.remove('hide');
+		}
+
+		async function caption(key: CaptionKey) {
+			cap.classList.add('hide');
+			await sleep(250);
+			renderCaption(key);
+		}
+
+		/* changes */
+		const changeRows: Record<string, HTMLElement> = {};
+		function buildChanges() {
+			const p = panel('changes');
+			p.innerHTML = `<div class="ph o">changes</div><div class="chlist"></div><div class="clean dim">✓ working tree clean</div>`;
+			const list = $('.chlist', p);
+			for (const r of CHANGES) {
+				const e = el('div', 'row hidden', rowHTML({ ...r, open: true }, true));
+				changeRows[r.id] = e;
+				list.appendChild(e);
+			}
+		}
+		function showChanges(ids: string[]) {
+			$('.clean', panel('changes')).style.display = 'none';
+			for (const id of ids) {
+				const e = changeRows[id];
+				if (!e.classList.contains('hidden')) continue;
+				e.classList.remove('hidden');
+				e.classList.add(CHANGES.find((r) => r.id === id)?.dir ? 'enter' : 'flash');
+			}
+		}
+		function selectChange(id: string) {
+			for (const e of Object.values(changeRows)) e.classList.remove('sel', 'flash', 'enter');
+			changeRows[id].classList.add('sel');
+		}
+
+		/* explorer */
+		const explorerRows: Record<string, HTMLElement> = {};
+		function buildExplorer() {
+			const p = panel('explorer');
+			p.innerHTML = `<div class="ph dim">explorer</div><div class="exlist"></div>`;
+			const list = $('.exlist', p);
+			for (const r of EXPLORER) {
+				const e = el('div', 'row' + (r.h ? ' hidden' : ''), rowHTML(r, false));
+				if (r.id === 'nm') e.style.opacity = '0.5';
+				explorerRows[r.id] = e;
+				list.appendChild(e);
+			}
+		}
+		function selectExplorer(id: string) {
+			for (const e of Object.values(explorerRows)) e.classList.remove('sel');
+			explorerRows[id].classList.add('sel');
+		}
+		async function expand(id: string, kids: string[], fresh: string[] = []) {
+			$('.chev', explorerRows[id]).textContent = '▾';
+			for (const k of kids) {
+				const e = explorerRows[k];
+				e.classList.remove('hidden', 'flash', 'enter');
+				void e.offsetWidth;
+				e.classList.add(fresh.includes(k) ? 'flash' : 'enter');
+				await sleep(80);
+			}
+		}
+
+		/* editor */
+		const ed: { lines: EditorLine[]; cur: { l: number; c: number }; mode: 'NORMAL' | 'INSERT' } = {
+			lines: [],
+			cur: { l: 0, c: 0 },
+			mode: 'NORMAL',
+		};
+		const mode = $('.mode');
+		const command = (html: string) => {
+			$('.ecmd', panel('editor')).innerHTML = html;
+		};
+		function setMode(next: 'NORMAL' | 'INSERT') {
+			mode.textContent = next;
+			mode.className = 'mode' + (next === 'INSERT' ? ' ins' : '');
+		}
+		function buildEditor() {
+			panel('editor').innerHTML = `<div class="tabs"><span class="tab">[No Name]</span></div><div class="ebody"><div class="splash">space ff &nbsp;<span class="hint">find file</span></div></div><div class="ecmd"></div>`;
+			ed.lines = [];
+			ed.cur = { l: 0, c: 0 };
+			ed.mode = 'NORMAL';
+			setMode('NORMAL');
+			$('.stfile').textContent = '';
+			$('.pos').textContent = '1:1';
+		}
+		function renderEditor() {
+			let h = '';
+			ed.lines.forEach((ln, i) => {
+				const cur = i === ed.cur.l;
+				let code = highlight(ln.t);
+				if (cur) {
+					const c = ed.cur.c;
+					const at = ed.mode === 'INSERT' ? '<span class="bar"></span>' + highlight(ln.t.slice(c)) : `<span class="blk">${esc(ln.t[c] || ' ')}</span>` + highlight(ln.t.slice(c + 1));
+					code = highlight(ln.t.slice(0, c)) + at;
+				}
+				h += `<div class="ln ${ln.k} ${cur ? 'cl' : ''}"><span class="gs"></span><span class="num">${cur ? i + 1 : Math.abs(i - ed.cur.l)}</span><span class="code">${code}</span></div>`;
+			});
+			h += '<div class="tilde">~</div>'.repeat(16);
+			$('.ebody', panel('editor')).innerHTML = h;
+			setMode(ed.mode);
+			$('.pos').textContent = `${ed.cur.l + 1}:${ed.cur.c + 1}`;
+		}
+		function openFile() {
+			ed.lines = ORIGINAL.map((t) => ({ t, k: '' }));
+			ed.cur = { l: 0, c: 0 };
+			$('.tabs', panel('editor')).innerHTML = '<span class="tab on">wallet.ts</span>';
+			$('.stfile').textContent = 'src/api/wallet.ts';
+			command('<span class="dim">"src/api/wallet.ts" 8L, 241B</span>');
+			renderEditor();
+		}
+		async function move(l: number, c: number, d = 200) {
+			ed.cur = { l, c };
+			renderEditor();
+			await sleep(d);
+		}
+		async function typeLine(at: number, text: string) {
+			ed.lines.splice(at, 0, { t: '', k: 'typing' });
+			ed.cur = { l: at, c: 0 };
+			renderEditor();
+			for (let i = 1; i <= text.length; i++) {
+				ed.lines[at].t = text.slice(0, i);
+				ed.cur.c = i;
+				renderEditor();
+				await sleep(text[i - 1] === ' ' ? 12 : 24 + Math.random() * 34);
+			}
+			ed.lines[at].k = 'add';
+		}
+		async function showDiff(file: string, lines: DiffLine[], speed: number) {
+			$('.tabs', panel('editor')).innerHTML = `<span class="tab on">${file.split('/').pop()} <span class="dim">(diff)</span></span>`;
+			$('.stfile').textContent = file;
+			command(`<span class="dim">${esc(file)}</span>`);
+			setMode('NORMAL');
+			const body = $('.ebody', panel('editor'));
+			body.innerHTML = '';
+			for (const [k, text] of lines) {
+				const cls = k === '+' ? 'a' : k === '-' ? 'd' : k === '@' ? 'h' : '';
+				body.appendChild(el('div', 'dl ' + cls, k === '@' ? esc(text) : esc(k + ' ') + highlight(text)));
+				await sleep(speed);
+			}
+		}
+		async function editorScene() {
+			await move(0, 0, 300);
+			await move(0, 29, 350);
+			command('<span class="dim">o</span>');
+			await sleep(250);
+			ed.mode = 'INSERT';
+			command('<span class="g strong">-- INSERT --</span>');
+			await typeLine(1, "import { withRetry } from '../utils/retry';");
+			ed.mode = 'NORMAL';
+			command('');
+			renderEditor();
+			await sleep(400);
+			await move(3, 0, 150);
+			await move(5, 0, 150);
+			await move(6, 2, 300);
+			command('<span class="dim">2dd</span>');
+			ed.lines[6].k = 'del';
+			ed.lines[7].k = 'del';
+			renderEditor();
+			await sleep(900);
+			ed.lines.splice(6, 2);
+			ed.cur = { l: 6, c: 0 };
+			renderEditor();
+			await sleep(250);
+			command('<span class="dim">O</span>');
+			await sleep(200);
+			ed.mode = 'INSERT';
+			command('<span class="g strong">-- INSERT --</span>');
+			await typeLine(6, '  return withRetry(');
+			await typeLine(7, '    () => http.get<Balance>(`/wallets/${id}`),');
+			await typeLine(8, '    { retries: 3, baseMs: 200 },');
+			await typeLine(9, '  );');
+			ed.mode = 'NORMAL';
+			ed.cur.c = 3;
+			renderEditor();
+			command('');
+			await sleep(350);
+			command(':');
+			await sleep(200);
+			command(':w');
+			await sleep(350);
+			command('<span class="dim">"src/api/wallet.ts" 11L, 318B written</span>');
+		}
+
+		/* agent */
+		function say(html: string, cls = '') {
+			const log = $('.alog', panel('agent'));
+			const b = el('div', 'ab ' + cls, html);
+			log.appendChild(b);
+			while (log.children.length > 24) log.firstElementChild?.remove();
+			return b;
+		}
+		function tool(name: string, arg: string) {
+			return say(`<div><span class="dot run">●</span> <b>${name}</b>(${esc(arg)})</div><div class="res dim">  ⎿  <span class="spin">⠋</span> running…</div>`);
+		}
+		function done(b: HTMLElement, html: string) {
+			$('.dot', b).className = 'dot ok';
+			$('.res', b).innerHTML = '  ⎿  ' + html;
+		}
+		function buildAgent() {
+			panel('agent').innerHTML = `<div class="ph dim">agent: claude</div><div class="alog"></div>
+				<div class="ain"><span class="pmt">❯</span> <span class="ait"></span><span class="tcur"></span></div>
+				<div class="afoot"><span class="o">⏵⏵ auto mode on</span><span class="dim">(shift+tab to cycle)</span></div>`;
+			say(`<div>&gt; Where is fetchBalance used?</div>`, 'user');
+			say(`<div><span class="dot ok">●</span> <b>Search</b>(pattern: "fetchBalance", path: "src")</div><div class="dim">  ⎿  Found 3 files</div>`);
+			say(`<div class="wrap"><span class="dot msg">●</span> It's called from useBalance.ts, WalletScreen.tsx and the pull-to-refresh handler in HomeScreen.tsx.</div>`);
+			say(`<div class="dim"><span class="o">✻</span> Brewed for 6s</div>`);
+		}
+
+		/* terminals */
+		function line(id: string, html: string, animate = false) {
+			const b = $('.tb', panel(id));
+			const d = el('div', 'tl' + (animate ? ' enter' : ''), html);
+			b.appendChild(d);
+			while (b.children.length > 30) b.firstElementChild?.remove();
+			return d;
+		}
+		function run(id: string, c: string) {
+			line(id, `<span class="dim">${PATH}</span>`);
+			line(id, `<span class="pr">▶</span> ${esc(c)}`);
+		}
+		function buildTerminals() {
+			for (const [id, name, running] of TERMINALS) {
+				panel(id).innerHTML = `<div class="th">${name}${running ? '<span class="run"><i class="pulse"></i>running</span>' : ''}</div><div class="tb"></div>`;
+			}
+			run('t1', 'pnpm expo start');
+			line('t1', 'Starting Metro Bundler');
+			line('t1', '› Metro waiting on <span class="bl">exp://192.168.0.12:8081</span>');
+			line('t1', '› Press <b>i</b> │ open iOS simulator');
+			line('t1', '› Press <b>r</b> │ reload app');
+			line('t1', '<span class="g">iOS Bundled</span> 1834ms index.ts <span class="dim">(1,203 modules)</span>');
+			line('t1', ' <span class="lg">LOG</span>  [wallet] balance refreshed <span class="dim">812ms</span>');
+			run('t2', 'pnpm jest --watch');
+			line('t2', '<span class="dim">No tests found related to files changed since last commit.</span>');
+			line('t2', '<span class="dim">Watch Usage: Press <b>w</b> to show more.</span>');
+			run('t3', 'pnpm tsc --noEmit --watch');
+			line('t3', `<span class="dim">[${now()}]</span> Starting compilation in watch mode...`);
+			line('t3', `<span class="dim">[${now()}]</span> Found <span class="g">0 errors</span>. Watching for file changes.`);
+			line('t4', `<span class="dim">${PATH}</span>`);
+			line('t4', '<span class="pr">▶</span> <span class="tcur"></span>');
+		}
+		async function bundle() {
+			const d = line('t1', '<span class="spin">⠋</span> iOS Bundling <span class="pc">0%</span> <span class="dim">index.ts</span>', true);
+			for (const p of [9, 31, 58, 84, 100]) {
+				$('.pc', d).textContent = p + '%';
+				await sleep(170);
+			}
+			d.innerHTML = '<span class="g">iOS Bundled</span> 214ms index.ts <span class="dim">(1,204 modules)</span>';
+		}
+		async function typecheck() {
+			line('t3', `<span class="dim">[${now()}]</span> File change detected. Starting incremental compilation...`, true);
+			await sleep(1300);
+			line('t3', `<span class="dim">[${now()}]</span> Found <span class="g">0 errors</span>. Watching for file changes.`, true);
+		}
+		async function testRun() {
+			line('t2', '<span class="dim">Determining test suites to run...</span>', true);
+			await sleep(600);
+			const r = line('t2', '<span class="badge runs">RUNS</span> src/api/__tests__/wallet.test.ts <span class="spin">⠋</span>', true);
+			await sleep(1800);
+			r.innerHTML = '<span class="badge pass">PASS</span> src/api/__tests__/wallet.test.ts';
+			const output = [
+				'  fetchBalance',
+				'    <span class="g">✓</span> returns the balance on first try <span class="dim">(3 ms)</span>',
+				'    <span class="g">✓</span> retries on 503 and succeeds <span class="dim">(204 ms)</span>',
+				'    <span class="g">✓</span> backs off 200 → 400 → 800 ms <span class="dim">(2 ms)</span>',
+				'    <span class="g">✓</span> gives up after 3 retries <span class="dim">(5 ms)</span>',
+				'',
+				'<b>Tests:</b>       <span class="g">4 passed</span>, 4 total',
+				'<b>Time:</b>        1.21 s',
+			];
+			for (const l of output) {
+				await sleep(220);
+				line('t2', l, true);
+			}
+		}
+		async function shellScene() {
+			$('.tb', panel('t4')).lastElementChild?.remove();
+			const prompt = line('t4', '<span class="pr">▶</span> <span class="v"></span><span class="tcur"></span>');
+			const v = $('.v', prompt);
+			const c = 'git diff --stat';
+			for (let i = 1; i <= c.length; i++) {
+				v.textContent = c.slice(0, i);
+				await sleep(70 + Math.random() * 50);
+			}
+			await sleep(300);
+			$('.tcur', prompt).remove();
+			const output = [
+				' src/api/__tests__/wallet.test.ts | 32 <span class="g">++++++++++</span>',
+				' src/api/wallet.ts                |  7 <span class="g">+++++</span><span class="r">--</span>',
+				' src/utils/retry.ts               | 16 <span class="g">+++++</span>',
+				' 3 files changed, 53 insertions(+), 2 deletions(-)',
+			];
+			for (const o of output) {
+				await sleep(130);
+				line('t4', o, true);
+			}
+			line('t4', `<span class="dim">${PATH}</span>`);
+			line('t4', '<span class="pr">▶</span> <span class="tcur"></span>');
+		}
+
+		/* scenario */
+		function reset() {
+			stage.classList.remove('dark');
+			buildChanges();
+			buildExplorer();
+			buildEditor();
+			buildAgent();
+			buildTerminals();
+		}
+
+		async function scene() {
+			cap.classList.add('hide');
+			world.style.opacity = '0';
+			await sleep(550);
+			reset();
+			world.style.opacity = '1';
+			caption('overview');
+			await sleep(2800);
+
+			caption('agent');
+			await focusOn(['agent'], regionOf('agent', -340));
+			await sleep(500);
+			const input = $('.ait', panel('agent'));
+			for (let i = 1; i <= PROMPT.length; i++) {
+				input.textContent = PROMPT.slice(0, i);
+				await sleep(PROMPT[i - 1] === ' ' ? 40 : 28 + Math.random() * 40);
+			}
+			await sleep(450);
+			input.textContent = '';
+			say(`<div>&gt; ${PROMPT}</div>`, 'user');
+			const thinking = say(`<div><span class="star">✻</span> <span class="o">Thinking…</span> <span class="dim">(esc to interrupt)</span></div>`);
+			await sleep(1700);
+			thinking.remove();
+			const read = tool('Read', 'src/api/wallet.ts');
+			await sleep(600);
+			done(read, 'Read 8 lines');
+			openFile();
+			await sleep(500);
+			const update = tool('Update', 'src/api/wallet.ts');
+			await sleep(700);
+
+			caption('editor');
+			await focusOn(['editor'], regionOf('editor', 0, 310));
+			await editorScene();
+			done(update, 'Updated src/api/wallet.ts with 5 additions and 2 removals');
+			say(
+				`<div class="mini">      2 <span class="a">+ import { withRetry } from '../utils/retry';</span></div>` +
+					`<div class="mini">      7 <span class="d">-   const res = await http.get&lt;Balance&gt;(\`/wallets/\${id}\`);</span></div>` +
+					`<div class="mini">      7 <span class="a">+   return withRetry(</span></div>`,
+			);
+			showChanges(['src', 'api', 'wallet']);
+			bundle();
+			typecheck();
+			const writes = (async () => {
+				const retry = tool('Write', 'src/utils/retry.ts');
+				await sleep(800);
+				done(retry, 'Wrote 16 lines to src/utils/retry.ts');
+				showChanges(['utils', 'retry']);
+				await sleep(600);
+				const test = tool('Write', 'src/api/__tests__/wallet.test.ts');
+				await sleep(900);
+				done(test, 'Wrote 32 lines to src/api/__tests__/wallet.test.ts');
+				showChanges(['tests', 'wtest']);
+				typecheck();
+			})();
+			await sleep(900);
+
+			caption('changes');
+			await focusOn(['changes'], regionOf('changes', 0, 250));
+			await writes;
+			await sleep(500);
+			selectChange('wallet');
+			await sleep(500);
+			let diff = showDiff('src/api/wallet.ts', WALLET_DIFF, 160);
+			await focusOn(['editor'], regionOf('editor', 0, 310));
+			await diff;
+			await sleep(1300);
+			await focusOn(['changes'], regionOf('changes', 0, 250));
+			selectChange('retry');
+			await sleep(500);
+			diff = showDiff('src/utils/retry.ts', RETRY_DIFF, 130);
+			await focusOn(['editor'], regionOf('editor', 0, 310));
+			await diff;
+			await sleep(1200);
+
+			caption('dark');
+			await overview();
+			await sleep(400);
+			await setTheme(true);
+			await sleep(1600);
+
+			caption('explorer');
+			const explorer = rectOf(panel('explorer'));
+			const src = rectOf(explorerRows.src);
+			await focusOn(['explorer'], { x: explorer.x, w: explorer.w, y: src.y - 10, h: 300 });
+			selectExplorer('src');
+			await sleep(450);
+			await expand('src', ['api', 'comp', 'hooks', 'utils']);
+			await sleep(400);
+			selectExplorer('api');
+			await sleep(400);
+			await expand('api', ['tests', 'wtest', 'http', 'wallet'], ['tests', 'wtest']);
+			await sleep(600);
+			selectExplorer('utils');
+			await sleep(400);
+			await expand('utils', ['retry'], ['retry']);
+			await sleep(600);
+			selectExplorer('hooks');
+			await sleep(400);
+			await expand('hooks', ['fmtA', 'useb']);
+			await sleep(500);
+			selectExplorer('retry');
+			await sleep(600);
+			selectExplorer('wtest');
+			await sleep(1200);
+
+			const jest = tool('Bash', 'pnpm jest wallet');
+			caption('terminals');
+			await focusOn(['t1']);
+			bundle();
+			await sleep(1600);
+			await focusOn(['t2']);
+			await testRun();
+			done(jest, '<span class="g">PASS</span> · 4 tests passed');
+			await sleep(900);
+			await focusOn(['t3']);
+			await typecheck();
+			await sleep(600);
+			await focusOn(['t4']);
+			await shellScene();
+			await sleep(1500);
+
+			say(
+				`<div class="wrap"><span class="dot msg">●</span> fetchBalance now retries up to 3 times with exponential backoff (200 → 400 → 800 ms). Added withRetry in src/utils/retry.ts and 4 tests in wallet.test.ts, all passing.</div>`,
+			);
+			say(`<div class="dim"><span class="o">✻</span> Brewed for 26s</div>`);
+			caption('done');
+			await overview();
+			await sleep(2600);
+		}
+
+		function start() {
+			let tick = 0;
+			setInterval(() => {
+				if (!visible) return;
+				tick++;
+				for (const s of root.querySelectorAll('.spin')) s.textContent = BRAILLE[tick % BRAILLE.length];
+				if (tick % 2) for (const s of root.querySelectorAll('.star')) s.textContent = STARS[(tick >> 1) % STARS.length];
+			}, 90);
+			let log = 0;
+			setInterval(() => {
+				if (!visible) return;
+				const ms = 200 + Math.floor(Math.random() * 700);
+				line('t1', ` <span class="lg">LOG</span>  ${SERVER_LOGS[log++ % SERVER_LOGS.length]} <span class="dim">${ms}ms</span>`, true);
+			}, 3600);
+			(async () => {
+				while (true) {
+					try {
+						await scene();
+					} catch (error) {
+						console.error(error);
+						await sleep(1000);
+					}
+				}
+			})();
+		}
+
+		reset();
+		applyCam();
+
+		return {
+			still() {
+				renderCaption('overview');
+			},
+			setVisible(next: boolean) {
+				visible = next;
+				if (!next) return;
+				for (const resolve of waiting.splice(0)) resolve();
+				if (!started) {
+					started = true;
+					start();
+				}
+			},
+		};
+	}
 
 	class Showcase extends HTMLElement {
-		#timer: number | undefined;
-		#touched = false;
-
 		connectedCallback() {
-			const buttons = [...this.querySelectorAll<HTMLButtonElement>('.tour button')];
-			const regions = this.querySelectorAll<HTMLElement>('.region');
-
-			for (const button of buttons) {
-				button.addEventListener('click', () => this.#pick(button.dataset.region));
-				button.addEventListener('mouseenter', () => this.#pick(button.dataset.region));
-				button.addEventListener('focus', () => this.#pick(button.dataset.region));
+			const captions = JSON.parse(this.dataset.captions ?? '{}') as Captions;
+			const demo = createDemo(this, captions);
+			if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+				demo.still();
+				return;
 			}
-			for (const region of regions) {
-				region.addEventListener('mouseenter', () => this.#pick(region.dataset.region));
-			}
-			this.querySelector('.screen')?.addEventListener('mouseleave', () => this.#pick(undefined));
-
-			if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-			// The tour only runs while the screenshot is on screen, and stops for good once the reader takes over.
-			new IntersectionObserver(([entry]) => {
-				if (entry?.isIntersecting && !this.#touched) this.#play(buttons);
-				else this.#stop();
-			}, { threshold: 0.5 }).observe(this);
-		}
-
-		#play(buttons: HTMLButtonElement[]) {
-			if (this.#timer !== undefined) return;
-			let step = 0;
-			const next = () => {
-				this.#show(buttons[step % buttons.length]?.dataset.region);
-				step++;
-			};
-			next();
-			this.#timer = window.setInterval(next, TOUR_STEP_MS);
-		}
-
-		#stop() {
-			window.clearInterval(this.#timer);
-			this.#timer = undefined;
-		}
-
-		#pick(id: string | undefined) {
-			this.#touched = true;
-			this.#stop();
-			this.#show(id);
-		}
-
-		#show(id: string | undefined) {
-			if (id) this.dataset.active = id;
-			else delete this.dataset.active;
-			for (const button of this.querySelectorAll<HTMLButtonElement>('.tour button')) {
-				button.setAttribute('aria-pressed', String(button.dataset.region === id));
-			}
-			const caption = this.querySelector<HTMLElement>('.caption');
-			const text = this.querySelector('template')?.content.querySelector(`[data-region="${id}"]`);
-			if (caption) caption.textContent = text?.textContent ?? caption.dataset.intro ?? '';
+			new IntersectionObserver(([entry]) => demo.setVisible(entry?.isIntersecting ?? false), { threshold: 0.25 }).observe(this);
 		}
 	}
 
 	customElements.define('f0-showcase', Showcase);
 </script>
 
-<style>
+<style is:global>
+	/* Global because the demo builds most of its DOM at runtime, out of reach of scoped styles. */
 	f0-showcase {
 		display: block;
 		margin-block: 1rem 3rem;
-	}
 
-	.window {
-		overflow: hidden;
-		border: 1px solid var(--sl-color-hairline-light);
-		border-radius: 0.75rem;
-		background: #fff;
-		box-shadow: 0 24px 60px rgb(0 0 0 / 0.16);
-	}
+		.window {
+			overflow: hidden;
+			border: 1px solid var(--sl-color-hairline-light);
+			border-radius: 0.75rem;
+			box-shadow: 0 24px 60px rgb(0 0 0 / 0.16);
+		}
 
-	.titlebar {
-		display: flex;
-		align-items: center;
-		gap: 0.45rem;
-		padding: 0.6rem 0.9rem;
-		border-bottom: 1px solid var(--sl-color-hairline-light);
-		background: var(--f0-surface);
-	}
+		/* Surfaces use the same neutral grays as custom.css, so the window blends with the page in each theme. */
+		.stage {
+			--bg: #f5f5f5;
+			--panel: #f1f1f1;
+			--ed: #fafafa;
+			--term: #f3f3f3;
+			--tbar: #e9e9e9;
+			--line: #d9d9d9;
+			--line2: #cccccc;
+			--txt: #262626;
+			--dim: #8f8f8f;
+			--ttl: #525252;
+			--o: #e07b39;
+			--m: #e07b39;
+			--dn: #3f6fdc;
+			--fold: #3f6fdc;
+			--link: #3f6fdc;
+			--p: #9b6ad6;
+			--g: #3d8b40;
+			--gbg: #dcf5d3;
+			--r: #d1495b;
+			--rbg: #fbe0e3;
+			--addt: #25632a;
+			--delt: #9b2335;
+			--flash: #cdeec4;
+			--sel: #e4e4e4;
+			--cl: #ededed;
+			--tab: #fff;
+			--ubg: #e9e9e9;
+			--num: #b3b3b3;
+			--tilde: #c7c7c7;
+			--blkt: #fff;
+			--lgbg: #737373;
+			--foot: #e07b39;
+			--kw: #a04fd1;
+			--str: #3d8b40;
+			--ty: #c0661f;
+			--fn: #2f6fd6;
+			--nu: #c0661f;
 
-	.titlebar span {
-		width: 0.7rem;
-		height: 0.7rem;
-		border-radius: 50%;
-		background: #ff5f57;
-	}
+			position: relative;
+			width: 100%;
+			aspect-ratio: 16 / 10;
+			overflow: hidden;
+			container-type: inline-size;
+			background: var(--bg);
+		}
 
-	.titlebar span:nth-child(2) {
-		background: #febc2e;
-	}
+		.stage.dark {
+			--bg: #121212;
+			--panel: #191919;
+			--ed: #1e1e1e;
+			--term: #161616;
+			--tbar: #212121;
+			--line: #2b2b2b;
+			--line2: #3a3a3a;
+			--txt: #e4e4e4;
+			--dim: #707070;
+			--ttl: #d0d0d0;
+			--o: #f0a43a;
+			--m: #e5c07b;
+			--dn: #d6d6d6;
+			--fold: #5c6370;
+			--link: #7aa2f7;
+			--p: #c678dd;
+			--g: #98c379;
+			--gbg: #1f3320;
+			--r: #ef6f7d;
+			--rbg: #3d2328;
+			--addt: #b5e3a8;
+			--delt: #f4a7b0;
+			--flash: #28432a;
+			--sel: #2a2a2a;
+			--cl: #2b2b2b;
+			--tab: #2c2c2c;
+			--ubg: #2a2a2a;
+			--num: #4e4e4e;
+			--tilde: #3a3a3a;
+			--blkt: #1e1e1e;
+			--lgbg: #4a4a4a;
+			--foot: #6cb6ff;
+			--kw: #c792ea;
+			--str: #a5d6a7;
+			--ty: #e5c07b;
+			--fn: #82aaff;
+			--nu: #f78c6c;
+		}
 
-	.titlebar span:nth-child(3) {
-		background: #28c840;
-	}
+		.stage.dark .ph,
+		.stage.dark .th {
+			text-transform: uppercase;
+		}
 
-	.titlebar p {
-		flex: 1;
-		margin: 0 3.4rem 0 0;
-		color: var(--sl-color-gray-3);
-		font-family: var(--sl-font-mono);
-		font-size: var(--sl-text-xs);
-		text-align: center;
-	}
+		.stage.dark [data-panel='changes'] .ph {
+			color: var(--txt);
+			text-decoration: underline;
+			text-underline-offset: 4px;
+		}
 
-	.screen {
-		position: relative;
-		overflow: hidden;
-	}
+		.world {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 1600px;
+			height: 1000px;
+			transform-origin: 0 0;
+			transition: opacity 0.3s;
+		}
 
-	.screen img {
-		display: block;
-		width: 100%;
-		height: auto;
-		margin: 0;
-	}
+		.win {
+			position: absolute;
+			inset: 0;
+			display: flex;
+			flex-direction: column;
+			background: var(--bg);
+			color: var(--txt);
+			font-family: var(--__sl-font-mono);
+			font-size: 12px;
+			line-height: normal;
+		}
 
-	/* Coordinates of each tmux pane, as a share of the screenshot. */
-	.region {
-		position: absolute;
-		margin: 0;
-		border-radius: 0.375rem;
-		transition: box-shadow 0.35s ease, outline-color 0.35s ease;
-		outline: 2px solid transparent;
-		outline-offset: -2px;
-	}
+		.titlebar {
+			display: flex;
+			flex: none;
+			align-items: center;
+			gap: 14px;
+			height: 34px;
+			padding: 0 14px;
+			border-bottom: 1px solid var(--line);
+			background: var(--tbar);
+		}
 
-	.region[data-region='changes'] {
-		inset: 0.4% 82.6% 29% 0.4%;
-	}
+		.lights {
+			display: flex;
+			gap: 8px;
+		}
 
-	.region[data-region='file'] {
-		inset: 0.4% 54.5% 29% 17.5%;
-	}
+		.lights i {
+			display: block;
+			width: 12px;
+			height: 12px;
+			border-radius: 50%;
+			background: #ff5f57;
+		}
 
-	.region[data-region='explorer'] {
-		inset: 0.4% 35.5% 29% 45.6%;
-	}
+		.lights i:nth-child(2) {
+			background: #febc2e;
+		}
 
-	.region[data-region='agent'] {
-		inset: 0.4% 0.4% 26.9% 64.6%;
-	}
+		.lights i:nth-child(3) {
+			background: #28c840;
+		}
 
-	.region[data-region='servers'] {
-		inset: 72.6% 74.8% 3.8% 0.4%;
-	}
+		.ttl {
+			color: var(--ttl);
+			font-weight: 600;
+		}
 
-	.region[data-region='shells'] {
-		inset: 72.6% 0.4% 3.8% 25.2%;
-	}
+		.top {
+			display: flex;
+			flex: none;
+			height: 640px;
+		}
 
-	/* A huge spread shadow dims everything around the active pane; .screen clips it. */
-	f0-showcase[data-active='changes'] .region[data-region='changes'],
-	f0-showcase[data-active='file'] .region[data-region='file'],
-	f0-showcase[data-active='explorer'] .region[data-region='explorer'],
-	f0-showcase[data-active='agent'] .region[data-region='agent'],
-	f0-showcase[data-active='servers'] .region[data-region='servers'],
-	f0-showcase[data-active='shells'] .region[data-region='shells'] {
-		box-shadow: 0 0 0 200vmax rgb(15 23 42 / 0.55);
-		outline-color: var(--sl-color-accent);
-	}
+		.left {
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+			min-width: 0;
+		}
 
-	.tour {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: 0.5rem;
-		margin-top: 1.25rem;
-	}
+		.cols {
+			display: flex;
+			flex: 1;
+			min-height: 0;
+		}
 
-	.tour button {
-		padding: 0.35rem 0.9rem;
-		border: 1px solid var(--sl-color-hairline-light);
-		border-radius: 999px;
-		background: var(--f0-surface);
-		color: var(--sl-color-gray-2);
-		font: inherit;
-		font-size: var(--sl-text-sm);
-		cursor: pointer;
-		transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-	}
+		.panel {
+			position: relative;
+			overflow: hidden;
+			transition: opacity 0.6s;
+		}
 
-	.tour button[aria-pressed='true'] {
-		border-color: var(--sl-color-accent);
-		background: var(--sl-color-accent);
-		color: var(--sl-color-text-invert);
-	}
+		[data-panel='changes'] {
+			width: 300px;
+			background: var(--panel);
+		}
 
-	.caption {
-		min-height: 3em;
-		max-width: 40rem;
-		margin: 0.75rem auto 0;
-		color: var(--sl-color-gray-3);
-		font-size: var(--sl-text-sm);
-		text-align: center;
-	}
+		[data-panel='editor'] {
+			display: flex;
+			flex-direction: column;
+			width: 460px;
+			background: var(--ed);
+		}
 
-	@media (prefers-reduced-motion: no-preference) {
-		@supports (animation-timeline: view()) {
-			.window {
-				animation: straighten linear both;
-				animation-timeline: view();
-				animation-range: entry 0% cover 35%;
+		[data-panel='explorer'] {
+			width: 250px;
+			border-left: 1px solid var(--line);
+			background: var(--panel);
+		}
+
+		[data-panel='agent'] {
+			display: flex;
+			flex-direction: column;
+			width: 590px;
+			border-left: 1px solid var(--line);
+			background: var(--panel);
+		}
+
+		.status {
+			display: flex;
+			flex: none;
+			align-items: center;
+			gap: 16px;
+			height: 26px;
+			padding: 0 14px;
+			border-top: 1px solid var(--line);
+			background: var(--bg);
+		}
+
+		.mode {
+			color: var(--o);
+			font-weight: 600;
+		}
+
+		.mode.ins {
+			color: var(--g);
+		}
+
+		.sp {
+			flex: 1;
+		}
+
+		.terms {
+			display: flex;
+			flex: 1;
+			min-height: 0;
+			border-top: 1px solid var(--line);
+		}
+
+		.term {
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+			min-width: 0;
+			border-left: 1px solid var(--line);
+			background: var(--term);
+		}
+
+		.term:first-child {
+			border-left: none;
+		}
+
+		.th {
+			display: flex;
+			flex: none;
+			align-items: center;
+			gap: 10px;
+			height: 24px;
+			padding: 0 14px;
+			color: var(--dim);
+		}
+
+		.run {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			color: var(--g);
+			font-size: 11px;
+		}
+
+		.pulse {
+			width: 7px;
+			height: 7px;
+			border-radius: 50%;
+			background: #3fb950;
+			animation: f0-pulse 1.4s infinite;
+		}
+
+		.tb {
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+			justify-content: flex-end;
+			overflow: hidden;
+			padding: 4px 14px 10px;
+			line-height: 18px;
+			white-space: pre;
+		}
+
+		.tl {
+			min-height: 18px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.tl.enter {
+			animation: f0-fade-in 0.25s ease-out;
+		}
+
+		.bottombar {
+			display: flex;
+			flex: none;
+			align-items: center;
+			gap: 22px;
+			height: 28px;
+			padding: 0 14px;
+			border-top: 1px solid var(--line);
+			background: var(--bg);
+		}
+
+		.foot {
+			color: var(--foot);
+		}
+
+		.o {
+			color: var(--o);
+		}
+
+		.dim {
+			color: var(--dim);
+		}
+
+		.g {
+			color: var(--g);
+		}
+
+		.r {
+			color: var(--r);
+		}
+
+		.bl {
+			color: var(--link);
+		}
+
+		.strong {
+			font-weight: 600;
+		}
+
+		.ph {
+			display: flex;
+			align-items: center;
+			height: 30px;
+			padding: 0 14px;
+			font-weight: 600;
+		}
+
+		.ph.dim {
+			font-weight: 400;
+		}
+
+		[data-panel='agent'] .ph {
+			padding-left: 20px;
+		}
+
+		.row {
+			display: flex;
+			align-items: center;
+			height: 22px;
+			overflow: hidden;
+			padding-right: 12px;
+			border-radius: 3px;
+			white-space: nowrap;
+		}
+
+		.row.hidden {
+			display: none;
+		}
+
+		.row.sel {
+			background: var(--sel);
+		}
+
+		.row.enter {
+			animation: f0-row-in 0.3s ease-out;
+		}
+
+		.row.flash {
+			animation:
+				f0-row-in 0.3s ease-out,
+				f0-flash 1.8s ease-out;
+		}
+
+		.chev {
+			display: inline-block;
+			width: 12px;
+			color: var(--dim);
+		}
+
+		.fold {
+			position: relative;
+			display: inline-block;
+			flex: none;
+			width: 13px;
+			height: 10px;
+			margin: 0 7px 0 2px;
+			border-radius: 2px;
+			background: var(--fold);
+		}
+
+		.fold::before {
+			content: '';
+			position: absolute;
+			top: -2px;
+			left: 0;
+			width: 6px;
+			height: 3px;
+			border-radius: 1px 1px 0 0;
+			background: var(--fold);
+		}
+
+		.dn {
+			color: var(--dn);
+		}
+
+		.ft {
+			display: inline-block;
+			flex: none;
+			width: 22px;
+			font-size: 9.5px;
+			font-weight: 600;
+		}
+
+		.ft.ts {
+			color: #3178c6;
+		}
+
+		.ft.json {
+			color: #c79a10;
+		}
+
+		.ft.md {
+			color: var(--txt);
+		}
+
+		.ft.env,
+		.ft.yaml {
+			color: var(--dim);
+		}
+
+		.nm {
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.st {
+			margin-left: auto;
+			padding-left: 8px;
+			font-weight: 600;
+		}
+
+		.st-M,
+		.n-M {
+			color: var(--m);
+		}
+
+		.st-A,
+		.n-A {
+			color: var(--g);
+		}
+
+		.st-R,
+		.n-R {
+			color: var(--p);
+		}
+
+		.cnt {
+			margin-left: auto;
+			font-size: 11px;
+		}
+
+		.cnt + .st {
+			margin-left: 8px;
+		}
+
+		.chlist,
+		.exlist {
+			position: relative;
+			padding: 0 6px;
+		}
+
+		.clean {
+			padding: 6px 20px;
+		}
+
+		.ebody .dl {
+			overflow: hidden;
+			padding: 0 4px;
+			border-radius: 2px;
+			font-size: 12px;
+			line-height: 20px;
+			text-overflow: ellipsis;
+			white-space: pre;
+			animation: f0-fade-in 0.2s ease-out;
+		}
+
+		.dl.a {
+			background: var(--gbg);
+			color: var(--addt);
+		}
+
+		.dl.d {
+			background: var(--rbg);
+			color: var(--delt);
+		}
+
+		.dl.d span {
+			color: inherit;
+		}
+
+		.dl.h {
+			margin-top: 4px;
+			color: var(--p);
+		}
+
+		.tabs {
+			display: flex;
+			flex: none;
+			align-items: flex-end;
+			height: 30px;
+			padding: 0 10px;
+			border-bottom: 1px solid var(--line);
+		}
+
+		.tab {
+			padding: 5px 12px;
+			border-radius: 5px 5px 0 0;
+			color: var(--dim);
+		}
+
+		.tab.on {
+			border: 1px solid var(--line);
+			border-bottom: none;
+			background: var(--tab);
+			color: var(--txt);
+		}
+
+		.ebody {
+			position: relative;
+			flex: 1;
+			overflow: hidden;
+			padding: 8px 0;
+		}
+
+		.splash {
+			position: absolute;
+			inset: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--dim);
+		}
+
+		.splash .hint {
+			color: var(--num);
+		}
+
+		.ln {
+			display: flex;
+			align-items: center;
+			height: 20px;
+			white-space: pre;
+		}
+
+		.ln .gs {
+			width: 3px;
+			height: 100%;
+			margin-right: 6px;
+		}
+
+		.ln.add .gs,
+		.ln.typing .gs {
+			background: #57b85c;
+		}
+
+		.ln.typing {
+			background: var(--gbg);
+		}
+
+		.ln.del {
+			background: var(--rbg);
+		}
+
+		.ln.del .gs {
+			background: var(--r);
+		}
+
+		.ln.del .code {
+			color: var(--delt);
+			text-decoration: line-through;
+		}
+
+		.ln.cl {
+			background: var(--cl);
+		}
+
+		.ln.cl.typing {
+			background: var(--gbg);
+		}
+
+		.num {
+			flex: none;
+			width: 30px;
+			margin-right: 14px;
+			color: var(--num);
+			text-align: right;
+		}
+
+		.ln.cl .num {
+			color: var(--o);
+		}
+
+		.tilde {
+			height: 20px;
+			padding-left: 9px;
+			color: var(--tilde);
+		}
+
+		.blk {
+			background: var(--o);
+			color: var(--blkt);
+		}
+
+		.bar {
+			display: inline-block;
+			width: 2px;
+			height: 15px;
+			background: var(--o);
+			vertical-align: -3px;
+			animation: f0-blink 1s steps(1) infinite;
+		}
+
+		.ecmd {
+			display: flex;
+			flex: none;
+			align-items: center;
+			height: 22px;
+			padding: 0 12px;
+			color: var(--txt);
+		}
+
+		.k {
+			color: var(--kw);
+		}
+
+		.s {
+			color: var(--str);
+		}
+
+		.t {
+			color: var(--ty);
+		}
+
+		.f {
+			color: var(--fn);
+		}
+
+		.c {
+			color: var(--dim);
+			font-style: italic;
+		}
+
+		.nu {
+			color: var(--nu);
+		}
+
+		.alog {
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+			justify-content: flex-end;
+			overflow: hidden;
+			padding: 0 18px 8px;
+			font-size: 12.5px;
+			line-height: 19px;
+		}
+
+		.ab {
+			margin-top: 10px;
+			animation: f0-fade-in 0.3s ease-out;
+		}
+
+		.ab > div {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: pre;
+		}
+
+		.ab > div.wrap,
+		.ab.user > div {
+			white-space: pre-wrap;
+		}
+
+		.ab.user {
+			padding: 6px 10px;
+			border-radius: 5px;
+			background: var(--ubg);
+		}
+
+		.dot {
+			font-size: 11px;
+		}
+
+		.dot.run {
+			color: var(--o);
+			animation: f0-pulse 1s infinite;
+		}
+
+		.dot.ok {
+			color: #3fb950;
+		}
+
+		.dot.msg {
+			color: var(--txt);
+		}
+
+		.mini {
+			font-size: 11.5px;
+		}
+
+		.mini .a {
+			background: var(--gbg);
+			color: var(--addt);
+		}
+
+		.mini .d {
+			background: var(--rbg);
+			color: var(--delt);
+		}
+
+		.ain {
+			min-height: 40px;
+			margin: 0 14px;
+			padding: 9px 6px;
+			border-top: 1px solid var(--line2);
+			border-bottom: 1px solid var(--line2);
+			font-size: 12.5px;
+			white-space: pre-wrap;
+		}
+
+		.pmt {
+			color: var(--txt);
+			font-weight: 600;
+		}
+
+		.tcur {
+			display: inline-block;
+			width: 7px;
+			height: 15px;
+			margin-left: 1px;
+			background: var(--txt);
+			vertical-align: -3px;
+			animation: f0-blink 1s steps(1) infinite;
+		}
+
+		.afoot {
+			display: flex;
+			flex: none;
+			align-items: center;
+			gap: 8px;
+			height: 36px;
+			padding: 0 20px;
+		}
+
+		.star {
+			display: inline-block;
+			width: 12px;
+			color: var(--o);
+		}
+
+		.spin {
+			color: var(--o);
+		}
+
+		.badge {
+			padding: 0 5px;
+			border-radius: 2px;
+			color: #fff;
+			font-weight: 600;
+		}
+
+		.badge.runs {
+			background: #d9a21b;
+		}
+
+		.badge.pass {
+			background: #3d9a42;
+		}
+
+		.lg {
+			padding: 0 4px;
+			border-radius: 2px;
+			background: var(--lgbg);
+			color: #fff;
+			font-size: 10.5px;
+		}
+
+		.pr {
+			color: var(--txt);
+		}
+
+		.world.zoomed .panel {
+			opacity: 0.38;
+		}
+
+		.world.zoomed .panel.focus {
+			opacity: 1;
+		}
+
+		.cap {
+			position: absolute;
+			top: 44px;
+			left: 50%;
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			max-width: 92%;
+			padding: 10px 16px;
+			border-radius: 999px;
+			background: rgb(28 31 40 / 0.88);
+			box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+			color: #fff;
+			font: 500 14px/1.2 var(--__sl-font);
+			white-space: nowrap;
+			transform: translateX(-50%);
+			transition: opacity 0.35s;
+		}
+
+		.cap.hide {
+			opacity: 0;
+		}
+
+		.cap > span:first-child {
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.cap b {
+			color: #ffb27a;
+			font-weight: 600;
+		}
+
+		.dots {
+			display: flex;
+			flex: none;
+			gap: 6px;
+		}
+
+		.dots i {
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: rgb(255 255 255 / 0.3);
+		}
+
+		.dots i.on {
+			background: #ffb27a;
+		}
+
+		.stage.dark .cap {
+			background: rgb(246 246 248 / 0.94);
+			color: #1d1f25;
+		}
+
+		.stage.dark .cap b {
+			color: #d9661f;
+		}
+
+		.stage.dark .dots i {
+			background: rgb(0 0 0 / 0.18);
+		}
+
+		.stage.dark .dots i.on {
+			background: #d9661f;
+		}
+
+		@container (max-width: 700px) {
+			.cap {
+				top: 30px;
+				gap: 8px;
+				padding: 7px 12px;
+				font-size: 11px;
+			}
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			.window *,
+			.window *::before {
+				animation: none !important;
+			}
+		}
+
+		@media (prefers-reduced-motion: no-preference) {
+			@supports (animation-timeline: view()) {
+				.window {
+					animation: f0-straighten linear both;
+					animation-timeline: view();
+					animation-range: entry 0% cover 35%;
+				}
 			}
 		}
 	}
 
-	@keyframes straighten {
+	@keyframes f0-pulse {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.25;
+		}
+	}
+
+	@keyframes f0-blink {
+		50% {
+			opacity: 0;
+		}
+	}
+
+	@keyframes f0-fade-in {
+		from {
+			opacity: 0;
+			transform: translateY(4px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	@keyframes f0-row-in {
+		from {
+			height: 0;
+			opacity: 0;
+		}
+		to {
+			height: 22px;
+			opacity: 1;
+		}
+	}
+
+	@keyframes f0-flash {
+		0%,
+		30% {
+			background: var(--flash);
+		}
+		100% {
+			background: transparent;
+		}
+	}
+
+	@keyframes f0-straighten {
 		from {
 			transform: perspective(1800px) rotateX(14deg) scale(0.94);
 		}
