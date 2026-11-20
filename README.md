@@ -21,7 +21,7 @@ git clone https://github.com/falcondpr/f0 ~/dev/f0
 f0 doctor
 ```
 
-`install.sh` installs tmux and treehouse with Homebrew (treehouse only if it is not already in `PATH`), Rust if `cargo` is missing, and the `f0` binary with `cargo install`. By default it also installs Neovim, ripgrep, fd and Ghostty and links `config/nvim`, `config/tmux` and `config/ghostty/config` into `~/.config`. If you already have one of those configs it asks before replacing it, and keeps a backup. Run `install.sh --help` for the flags; `--cli-only` keeps all your own configs.
+`install.sh` installs tmux and treehouse with Homebrew (treehouse only if it is not already in `PATH`), Rust if `cargo` is missing, and the `f0` binary with `cargo install`. By default it also installs Neovim, ripgrep, fd and Ghostty and links `config/nvim`, `config/tmux`, `config/ghostty/config` and the Ghostty themes into `~/.config`. If you already have one of those configs it asks before replacing it, and keeps a backup. Run `install.sh --help` for the flags; `--cli-only` keeps all your own configs.
 
 You need macOS with Homebrew and the CLI of your AI agent: Claude Code by default, or any other you set as the agent.
 

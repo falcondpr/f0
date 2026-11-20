@@ -21,6 +21,7 @@ En [`f0 launch`](/es/reference/cli/#f0-launch), la pantalla de inicio de f0.app.
 | `x` | | Terminar la tarea y devolver su slot (`f0 done`), después de preguntar |
 | `e` | Editar el proyecto (`f0 edit`) | Editar el proyecto (`f0 edit`) |
 | `d` | Revisar la instalación (`f0 doctor`) | |
+| `t` | Cambiar el tema: auto (sigue a macOS), claro u oscuro. Ver [Apariencia](/es/guides/appearance/#claro-u-oscuro-desde-el-launcher) | |
 | `/` | Filtrar las tarjetas | Filtrar las tarjetas |
 | `Esc` | Borrar el filtro | Borrar el filtro, después volver a los proyectos |
 | `q` | Salir, cerrando la ventana de f0.app | Salir, cerrando la ventana de f0.app |
@@ -73,6 +74,7 @@ Valen en f0.app, desde su propia configuración, y en tu Ghostty cuando está en
 | `Space e` | Muestra u oculta el explorador |
 | `Space gm` | Muestra u oculta el panel de cambios |
 | `Space ui` | Restaura el layout de tres columnas |
+| `Space un` | Muestra u oculta los números de línea (relativos), para movimientos con cuenta como `5j` |
 | `Shift-l` / `Shift-h` | Buffer siguiente / anterior |
 | `Space bd` | Cierra el buffer; si tiene cambios sin guardar, pregunta si guardar, descartar o cancelar |
 

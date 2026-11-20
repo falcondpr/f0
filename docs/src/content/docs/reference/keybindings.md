@@ -21,6 +21,7 @@ In [`f0 launch`](/reference/cli/#f0-launch), the home screen of f0.app.
 | `x` | | Finish the task and return its slot (`f0 done`), after asking |
 | `e` | Edit the project (`f0 edit`) | Edit the project (`f0 edit`) |
 | `d` | Check the setup (`f0 doctor`) | |
+| `t` | Switch the theme: auto (follows macOS), light or dark. See [Appearance](/guides/appearance/#light-or-dark-from-the-launcher) | |
 | `/` | Filter the cards | Filter the cards |
 | `Esc` | Clear the filter | Clear the filter, then back to the projects |
 | `q` | Quit, closing the f0.app window | Quit, closing the f0.app window |
@@ -73,6 +74,7 @@ These apply in f0.app, from its own config, and in your Ghostty when the bundled
 | `Space e` | Toggle the explorer |
 | `Space gm` | Toggle the changed files panel |
 | `Space ui` | Restore the three-column layout |
+| `Space un` | Toggle line numbers (relative), for counted motions like `5j` |
 | `Shift-l` / `Shift-h` | Next / previous buffer |
 | `Space bd` | Close the buffer, asking to save, discard or cancel if it has unsaved changes |
 
