@@ -108,6 +108,29 @@ pub fn missing_ghostty_themes(dir: &Path) -> Vec<&'static str> {
         .collect()
 }
 
+/// The font both bundled Ghostty configs set. The launcher and Neovim draw its Nerd Font
+/// glyphs.
+pub const FONT: &str = "JetBrainsMono Nerd Font";
+
+/// The user and system folders macOS loads fonts from.
+pub fn font_dirs(home: &Path) -> [PathBuf; 2] {
+    [home.join("Library/Fonts"), PathBuf::from("/Library/Fonts")]
+}
+
+/// Whether one of `dirs` holds a file of [`FONT`], named as its Homebrew cask installs it.
+pub fn has_font(dirs: &[PathBuf]) -> bool {
+    dirs.iter()
+        .filter_map(|dir| std::fs::read_dir(dir).ok())
+        .flatten()
+        .flatten()
+        .any(|entry| {
+            entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with("JetBrainsMonoNerdFont-")
+        })
+}
+
 /// Whether `link` is a symlink to `<repo>/<rel>` inside an f0 repo, as install.sh leaves it.
 pub fn is_bundled(link: &Path, rel: &Path) -> bool {
     let Ok(target) = std::fs::read_link(link) else {
@@ -248,6 +271,23 @@ theme = dark:Catppuccin Mocha
         std::fs::write(dir.join("f0-dark"), "background = #1f1f1f").unwrap();
         assert!(missing_ghostty_themes(&dir).is_empty());
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn finds_the_font_in_any_font_folder() {
+        let tmp = std::env::temp_dir().join(format!("f0-fonts-{}", std::process::id()));
+        let user = tmp.join("user");
+        let system = tmp.join("system");
+        std::fs::create_dir_all(&user).unwrap();
+        std::fs::create_dir_all(&system).unwrap();
+        let dirs = [user.clone(), system.clone(), tmp.join("missing")];
+
+        std::fs::write(user.join("JetBrainsMono-Regular.ttf"), "").unwrap();
+        assert!(!has_font(&dirs));
+
+        std::fs::write(system.join("JetBrainsMonoNerdFont-Regular.ttf"), "").unwrap();
+        assert!(has_font(&dirs));
+        std::fs::remove_dir_all(&tmp).unwrap();
     }
 
     #[test]

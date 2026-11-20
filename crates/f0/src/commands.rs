@@ -613,6 +613,15 @@ pub fn doctor() -> anyhow::Result<()> {
     let ghostty =
         Path::new("/Applications/Ghostty.app").exists() || process::is_installed("ghostty");
     problems += report("Ghostty", ghostty, false);
+    let font = appearance::has_font(&appearance::font_dirs(&config::home_dir()?));
+    problems += report(
+        &format!(
+            "{}, the font of f0.app and the bundled configs",
+            appearance::FONT
+        ),
+        font,
+        false,
+    );
 
     let config_dir = config::config_dir()?;
     println!("\nf0.app");
