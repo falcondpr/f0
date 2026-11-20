@@ -17,6 +17,16 @@ Los agentes de IA funcionan mejor con un checkout por tarea, así dos tareas nun
 
 Los slots viven en `~/.treehouse/<repo>-<id>/<slot>/<repo>`. `f0 ls` muestra los slots en uso como `<proyecto>/<slot>`, un id único entre proyectos, con su tarea y su sesión.
 
+### Más de 16 tareas
+
+treehouse guarda hasta 16 slots por repositorio. Para tener más tareas a la vez, sube `max_trees` en un `treehouse.toml` en la raíz del repositorio:
+
+```toml
+max_trees = 32
+```
+
+Para dejar el archivo fuera del repositorio, agrégalo a `.git/info/exclude`.
+
 ## .worktreeinclude
 
 Cada proyecto necesita uno: f0 no empieza una tarea sin él. Un slot nuevo solo tiene los archivos versionados. Los archivos ignorados, como `.env`, se copian desde el checkout principal si coinciden con un patrón de `.worktreeinclude` en la raíz del repositorio, uno por línea:

@@ -17,6 +17,16 @@ AI 智能体在每个任务一个检出时效果最好，这样两个任务永�
 
 slot 位于 `~/.treehouse/<repo>-<id>/<slot>/<repo>`。`f0 ls` 以 `<project>/<slot>` 的形式显示正在使用的 slot，这个 id 在所有项目中唯一，并附带它们的任务和会话。
 
+### 超过 16 个任务
+
+treehouse 每个仓库最多保留 16 个 slot。要同时运行更多任务，在仓库根目录的 `treehouse.toml` 中调高 `max_trees`：
+
+```toml
+max_trees = 32
+```
+
+如果不想把这个文件提交到仓库，把它加到 `.git/info/exclude`。
+
 ## .worktreeinclude
 
 每个项目都需要一个：没有它，f0 不会启动任务。新的 slot 只包含被跟踪的文件。被忽略的文件（例如 `.env`）如果匹配仓库根目录 `.worktreeinclude` 中的模式，就会从主检出中复制过来，每行一个模式：
