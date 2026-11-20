@@ -48,7 +48,7 @@ Al volver a auto, todo sigue otra vez a macOS. Borrar `~/.config/f0/appearance` 
 
 | Capa | Cómo |
 |---|---|
-| Ghostty | `theme = light:f0-light,dark:f0-dark` en `config/ghostty/config`. Los temas están en `config/ghostty/themes`, e `install.sh` los linkea en `~/.config/ghostty/themes`. f0.app los lee del repo |
+| Ghostty | `theme = light:f0-light,dark:f0-dark` en `config/ghostty/config`. Los temas están en `config/ghostty/themes`, e `install.sh` los linkea en `~/.config/ghostty/themes`. f0.app lleva su propia copia, que hace `install.sh` |
 | tmux | `config/tmux/appearance.sh` lee la apariencia de macOS, fija el `theme` de tmux (que elige los colores `dark-theme-*` o `light-theme-*` de `config/tmux/tmux.conf`) y pinta cada panel con el fondo, el texto y los colores ANSI de la paleta. tmux lo corre al conectarse, al recibir el foco y cada 5 segundos; hace falta tmux 3.8 o posterior |
 | Neovim | `config/nvim/lua/f0/appearance.lua` lee la apariencia de macOS al recibir el foco y cada 5 segundos y fija `background`; el colorscheme elige la paleta clara u oscura según ese valor |
 | Claude Code | f0 lo arranca con `--settings '{"theme":"auto"}'`, así sigue el fondo que tmux pinta en su panel. Solo dentro de f0: tu `theme` de `~/.claude/settings.json` queda como está, y un `--settings` en el comando del agente del proyecto tiene prioridad |
