@@ -9,13 +9,13 @@ La configuración de Neovim incluida está pensada para revisar los cambios que 
 
 ## La vista por defecto
 
-`nvim .` abre tres columnas: **archivos modificados** a la izquierda, el archivo en el centro y el **explorador** a la derecha. El panel de archivos modificados se actualiza mientras el agente escribe, y los archivos que edita se recargan solos cuando vuelves al editor.
+`nvim .` abre los **archivos modificados** a la izquierda y el archivo al lado. El **explorador** se abre en el mismo lugar, un panel a la vez, así el código y el agente conservan su ancho. El panel de archivos modificados se actualiza mientras el agente escribe, y los archivos que edita se recargan solos cuando vuelves al editor.
 
 | Teclas | Acción |
 |---|---|
 | `Space gm` | Muestra u oculta el panel de cambios |
-| `Space e` | Muestra u oculta el explorador |
-| `Space ui` | Restaura las tres columnas |
+| `Space e` | Muestra u oculta el explorador, en lugar del panel de cambios |
+| `Space ui` | Vuelve al panel de cambios |
 
 ## Diffs lado a lado
 

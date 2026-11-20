@@ -74,9 +74,9 @@ These apply in f0.app, from its own config, and in your Ghostty when the bundled
 | `Space fg` | Search text in the project |
 | `Space fb` | Open buffers |
 | `Space fr` | Recent files |
-| `Space e` | Toggle the explorer |
+| `Space e` | Toggle the explorer, in place of the changed files |
 | `Space gm` | Toggle the changed files panel |
-| `Space ui` | Restore the three-column layout |
+| `Space ui` | Back to the changed files panel |
 | `Space un` | Toggle line numbers (relative), for counted motions like `5j` |
 | `Shift-l` / `Shift-h` | Next / previous buffer |
 | `Space bd` | Close the buffer, asking to save, discard or cancel if it has unsaved changes |

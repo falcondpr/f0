@@ -74,9 +74,9 @@ Valen en f0.app, desde su propia configuración, y en tu Ghostty cuando está en
 | `Space fg` | Buscar texto en el proyecto |
 | `Space fb` | Buffers abiertos |
 | `Space fr` | Archivos recientes |
-| `Space e` | Muestra u oculta el explorador |
+| `Space e` | Muestra u oculta el explorador, en lugar del panel de cambios |
 | `Space gm` | Muestra u oculta el panel de cambios |
-| `Space ui` | Restaura el layout de tres columnas |
+| `Space ui` | Vuelve al panel de cambios |
 | `Space un` | Muestra u oculta los números de línea (relativos), para movimientos con cuenta como `5j` |
 | `Shift-l` / `Shift-h` | Buffer siguiente / anterior |
 | `Space bd` | Cierra el buffer; si tiene cambios sin guardar, pregunta si guardar, descartar o cancelar |

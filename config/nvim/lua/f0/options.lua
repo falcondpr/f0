@@ -1,5 +1,9 @@
 local opt = vim.opt
 
+-- Sin netrw: `nvim .` lo resuelve el layout de neo-tree (ver plugins/neo-tree.lua).
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 opt.path:append("**")
 opt.wildmenu = true
 opt.wildignore:append({

@@ -23,7 +23,7 @@ end
 
 local gap = "    "
 
--- Los atajos que entran en el ancho de la ventana, en orden: entre los dos paneles de
+-- Los atajos que entran en el ancho de la ventana, en orden: al lado del panel de
 -- neo-tree el centro puede quedar angosto.
 local function render(win, buf)
   local available = vim.api.nvim_win_get_width(win) - 4
