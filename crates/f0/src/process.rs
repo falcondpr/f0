@@ -11,7 +11,7 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    Ok(raw_output(program, args, cwd)?.trim().to_owned())
+    Ok(capture(&mut command(program, args, cwd))?.trim().to_owned())
 }
 
 /// Like `output`, but only drops the final newline, for values where spaces count.
@@ -20,35 +20,12 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    let out = raw_output(program, args, cwd)?;
+    let out = capture(&mut command(program, args, cwd))?;
     Ok(out.strip_suffix('\n').unwrap_or(&out).to_owned())
 }
 
-fn raw_output<I, S>(program: &str, args: I, cwd: Option<&Path>) -> Result<String, F0Error>
-where
-    I: IntoIterator<Item = S>,
-    S: AsRef<OsStr>,
-{
-    let mut command = Command::new(program);
-    command.args(args).stdin(Stdio::null());
-    if let Some(dir) = cwd {
-        command.current_dir(dir);
-    }
-
-    let out = command
-        .output()
-        .map_err(|source| spawn_error(program, source))?;
-    if !out.status.success() {
-        return Err(F0Error::CommandFailed {
-            command: describe(&command),
-            stderr: String::from_utf8_lossy(&out.stderr).trim().to_owned(),
-        });
-    }
-    Ok(String::from_utf8_lossy(&out.stdout).into_owned())
-}
-
-/// Runs `program` attached to the current terminal, so it can prompt the user.
-pub fn interactive<I, S>(program: &str, args: I, cwd: Option<&Path>) -> Result<(), F0Error>
+/// The command `output` runs, for callers that need to adjust it first.
+pub fn command<I, S>(program: &str, args: I, cwd: Option<&Path>) -> Command
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
@@ -58,13 +35,32 @@ where
     if let Some(dir) = cwd {
         command.current_dir(dir);
     }
+    command
+}
 
+/// Runs `command` and returns its stdout, failing on a non-zero exit.
+pub fn capture(command: &mut Command) -> Result<String, F0Error> {
+    let out = command
+        .stdin(Stdio::null())
+        .output()
+        .map_err(|source| spawn_error(command, source))?;
+    if !out.status.success() {
+        return Err(F0Error::CommandFailed {
+            command: describe(command),
+            stderr: String::from_utf8_lossy(&out.stderr).trim().to_owned(),
+        });
+    }
+    Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+}
+
+/// Runs `command` attached to the current terminal, so it can prompt the user.
+pub fn attach(command: &mut Command) -> Result<(), F0Error> {
     let status = command
         .status()
-        .map_err(|source| spawn_error(program, source))?;
+        .map_err(|source| spawn_error(command, source))?;
     if !status.success() {
         return Err(F0Error::CommandFailed {
-            command: describe(&command),
+            command: describe(command),
             stderr: format!("exited with {status}"),
         });
     }
@@ -80,16 +76,12 @@ pub fn is_installed(program: &str) -> bool {
         .is_ok_and(|status| status.success())
 }
 
-fn spawn_error(program: &str, source: std::io::Error) -> F0Error {
+fn spawn_error(command: &Command, source: std::io::Error) -> F0Error {
+    let program = command.get_program().to_string_lossy().into_owned();
     if source.kind() == ErrorKind::NotFound {
-        F0Error::MissingProgram {
-            program: program.to_owned(),
-        }
+        F0Error::MissingProgram { program }
     } else {
-        F0Error::Spawn {
-            program: program.to_owned(),
-            source,
-        }
+        F0Error::Spawn { program, source }
     }
 }
 

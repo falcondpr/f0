@@ -20,7 +20,7 @@ use ratatui::backend::CrosstermBackend;
 use crate::appearance::{self, Mode};
 use crate::config::{self, Launch, Project};
 use crate::tmux::{self, Attach, Session};
-use crate::{commands, edit, init};
+use crate::{commands, edit, init, treehouse};
 use state::{Action, Key, ProjectItem, RepoItem, State, TaskItem};
 use view::Palette;
 
@@ -38,6 +38,7 @@ pub fn run() -> anyhow::Result<()> {
     }
     require_terminal()?;
     ignore_interrupt();
+    treehouse::update_in_background();
     let config_dir = config::config_dir()?;
     let defaults = config::load_defaults(&config_dir)?;
     let app = App {
