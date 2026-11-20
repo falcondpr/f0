@@ -128,6 +128,11 @@ build_app() {
   /usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$plist" 2>/dev/null || true
   cp "$ROOT/target/release/f0-app" "$APP/Contents/MacOS/f0"
   cp "$ROOT/config/app/f0.icns" "$APP/Contents/Resources/f0.icns"
+  # The themes travel with the app, so it keeps working when the f0 repo moves or is on
+  # a commit without them.
+  mkdir -p "$APP/Contents/Resources/f0-themes"
+  cp "$ROOT/config/ghostty/themes/f0-light" "$ROOT/config/ghostty/themes/f0-dark" \
+    "$APP/Contents/Resources/f0-themes/"
   # A Ghostty downloaded with a browser is quarantined, and Gatekeeper would refuse the
   # copy once it is signed ad hoc.
   xattr -dr com.apple.quarantine "$APP" 2>/dev/null || true
@@ -142,7 +147,7 @@ write_app_config() {
   tmp="$(mktemp)"
   sed -e "s|@F0_BIN@|$(sed_escape "$CARGO_BIN/f0")|g" \
       -e "s|@F0_ICON@|$(sed_escape "$APP/Contents/Resources/f0.icns")|g" \
-      -e "s|@F0_THEMES@|$(sed_escape "$ROOT/config/ghostty/themes")|g" \
+      -e "s|@F0_THEMES@|$(sed_escape "$APP/Contents/Resources/f0-themes")|g" \
       "$ROOT/config/ghostty/f0.conf" >"$tmp"
   if [ -f "$dst" ] && cmp -s "$tmp" "$dst"; then
     rm "$tmp"

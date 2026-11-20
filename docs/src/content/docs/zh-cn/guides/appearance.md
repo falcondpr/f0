@@ -48,7 +48,7 @@ sidebar:
 
 | 层 | 方式 |
 |---|---|
-| Ghostty | `config/ghostty/config` 中的 `theme = light:f0-light,dark:f0-dark`。主题位于 `config/ghostty/themes`，`install.sh` 会把它们链接到 `~/.config/ghostty/themes`。f0.app 直接从仓库读取它们 |
+| Ghostty | `config/ghostty/config` 中的 `theme = light:f0-light,dark:f0-dark`。主题位于 `config/ghostty/themes`，`install.sh` 会把它们链接到 `~/.config/ghostty/themes`。f0.app 自带一份副本，由 `install.sh` 复制 |
 | tmux | `config/tmux/appearance.sh` 读取 macOS 外观，设置 tmux 的 `theme`（它会从 `config/tmux/tmux.conf` 中选择 `dark-theme-*` 或 `light-theme-*` 颜色），并用调色板的背景色、文字色和 ANSI 颜色绘制每个窗格。tmux 会在连接时、获得焦点时以及每 5 秒运行它一次；需要 tmux 3.8 或更高版本 |
 | Neovim | `config/nvim/lua/f0/appearance.lua` 在获得焦点时以及每 5 秒读取一次 macOS 外观并设置 `background`；配色方案据此选择浅色或深色调色板 |
 | Claude Code | f0 用 `--settings '{"theme":"auto"}'` 启动它，使它跟随 tmux 在其窗格中绘制的背景。仅在 f0 内生效：你在 `~/.claude/settings.json` 中的 `theme` 保持不变，项目智能体命令中自带的 `--settings` 优先 |

@@ -48,7 +48,7 @@ Back on auto, everything follows macOS again. Deleting `~/.config/f0/appearance`
 
 | Layer | How |
 |---|---|
-| Ghostty | `theme = light:f0-light,dark:f0-dark` in `config/ghostty/config`. The themes are in `config/ghostty/themes`, and `install.sh` links them into `~/.config/ghostty/themes`. f0.app reads them from the repo |
+| Ghostty | `theme = light:f0-light,dark:f0-dark` in `config/ghostty/config`. The themes are in `config/ghostty/themes`, and `install.sh` links them into `~/.config/ghostty/themes`. f0.app carries its own copy, made by `install.sh` |
 | tmux | `config/tmux/appearance.sh` reads the macOS appearance, sets tmux's `theme` (which picks the `dark-theme-*` or `light-theme-*` colors in `config/tmux/tmux.conf`) and paints every pane with the background, text and ANSI colors of the palette. tmux runs it on attach, on focus and every 5 seconds; it needs tmux 3.8 or later |
 | Neovim | `config/nvim/lua/f0/appearance.lua` reads the macOS appearance on focus and every 5 seconds and sets `background`; the colorscheme picks the light or dark palette from it |
 | Claude Code | f0 starts it with `--settings '{"theme":"auto"}'`, so it follows the background tmux paints in its pane. Only inside f0: your `theme` in `~/.claude/settings.json` is left as it is, and a `--settings` in the project's agent command wins |
