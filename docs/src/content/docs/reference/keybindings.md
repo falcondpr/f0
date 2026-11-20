@@ -53,6 +53,8 @@ Keys like `Ctrl-Shift-x` and `Ctrl-Enter` reach Neovim and the agent: the config
 
 Panes never close when their shell exits, for example with `Ctrl-d` at an empty prompt: f0 starts a new shell in the same pane, with the pane's command typed and waiting for Enter (`nvim .`, the agent, the server). To close a pane on purpose, use `Ctrl-a x`.
 
+While the agent runs, `Ctrl-d` does not reach it, so it cannot quit the agent by accident and leave a plain shell in its pane. Quit the agent with its own command, like `/exit`.
+
 ## Ghostty
 
 These apply in f0.app, from its own config, and in your Ghostty when the bundled `config/ghostty/config` is linked.

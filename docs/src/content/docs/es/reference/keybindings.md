@@ -53,6 +53,8 @@ Teclas como `Ctrl-Shift-x` y `Ctrl-Enter` llegan a Neovim y al agente: la config
 
 Los paneles no se cierran cuando su shell termina, por ejemplo con `Ctrl-d` en un prompt vacío: f0 abre un shell nuevo en el mismo panel, con el comando del panel escrito y esperando Enter (`nvim .`, el agente, el servidor). Para cerrar un panel a propósito, usa `Ctrl-a x`.
 
+Mientras el agente corre, `Ctrl-d` no le llega, así que no puede cerrarlo por accidente y dejar un shell común en su panel. Para salir del agente, usa su propio comando, como `/exit`.
+
 ## Ghostty
 
 Valen en f0.app, desde su propia configuración, y en tu Ghostty cuando está enlazado el `config/ghostty/config` incluido.

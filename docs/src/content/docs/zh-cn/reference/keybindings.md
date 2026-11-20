@@ -53,6 +53,8 @@ sidebar:
 
 窗格的 shell 退出时（例如在空提示符下按 `Ctrl-d`），窗格不会关闭：f0 会在同一个窗格中启动一个新的 shell，并在提示符中输入该窗格的命令（`nvim .`、agent、服务器），等待按 Enter。要有意关闭某个窗格，请使用 `Ctrl-a x`。
 
+智能体运行时，`Ctrl-d` 不会传给它，因此不会意外退出智能体并在其窗格中留下普通 shell。要退出智能体，请使用它自己的命令，例如 `/exit`。
+
 ## Ghostty
 
 这些快捷键在 f0.app 中由它自己的配置提供；在你的 Ghostty 中，则在链接了内置的 `config/ghostty/config` 时生效。
