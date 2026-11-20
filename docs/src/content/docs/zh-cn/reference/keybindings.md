@@ -39,6 +39,7 @@ sidebar:
 | `Ctrl-a s` | 选择会话 |
 | `Ctrl-a d` | 分离会话；一切继续运行 |
 | `Ctrl-a X` | 关闭此会话的 f0 任务：一个菜单，可以保留 slot 以后再用（`f0 stop`），或在询问后归还它（`f0 done`）。由 f0 自己绑定，参见[按键](/zh-cn/reference/configuration/#按键) |
+| `Ctrl-a A` | 在此会话的智能体下方启动另一个智能体：询问命令，直接按 Enter 启动项目的智能体（`f0 agent`）。由 f0 自己绑定 |
 | `Ctrl-a \|` / `Ctrl-a -` | 向右 / 向下分割 |
 | `Ctrl-a c` | 新建窗口 |
 | `Ctrl-a [` | 向上滚动（`v` 选择，`y` 复制到剪贴板） |
@@ -110,4 +111,4 @@ sidebar:
 
 跨窗格使用 `Ctrl-h/j/k/l` 需要 [vim-tmux-navigator](https://github.com/christoomey/vim-tmux-navigator) 的两部分：tmux 配置中的代码片段，以及 Neovim 中的插件。没有它们时，用你的 tmux 前缀键加方向键在窗格之间移动。只有你的 tmux 配置设置了 `pane-border-status`，窗格标题才会显示。
 
-每当 f0 创建或打开会话时，都会在你自己的前缀键之后绑定 `X`，所以它适用于任何 tmux 配置，而且无需重新加载。每个 f0 会话的状态栏都会显示它，比如 `C-b X close task`。可以用 [`[keys] done`](/zh-cn/reference/configuration/#按键) 换一个按键或关闭它。
+每当 f0 创建或打开会话时，都会在你自己的前缀键之后绑定 `X` 和 `A`，所以它们适用于任何 tmux 配置，而且无需重新加载。每个 f0 会话的状态栏都会显示它们，比如 `C-b X close task  C-b A new agent`。可以用 [`[keys]`](/zh-cn/reference/configuration/#按键) 换按键或关闭它们。

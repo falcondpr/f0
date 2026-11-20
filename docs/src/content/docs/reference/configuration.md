@@ -53,13 +53,15 @@ f0 binds its tmux keys itself, after your tmux prefix, so they work with any tmu
 ```toml
 [keys]
 done = "X"
+agent = "A"
 ```
 
 | Key | Default | Meaning |
 |---|---|---|
 | `keys.done` | `"X"` | Opens a menu to close the task of the session it is pressed in: keeping its slot, like `f0 stop`, or returning it, like `f0 done`. Any tmux key name (`"Q"`, `"M-x"`); `false` turns it off |
+| `keys.agent` | `"A"` | Asks for an agent in the status line and starts it under the others in the session it is pressed in, like [`f0 agent`](/reference/cli/#f0-agent). Enter alone starts the project's agent. Same values as `keys.done`, and it must be a different key |
 
-The status line of each f0 session shows the key, like `C-a X close task`. f0 never replaces a key your tmux config already binds to something else: `f0 keys` and `f0 doctor` tell you to pick another one.
+The status line of each f0 session shows the keys, like `C-a X close task  C-a A new agent`. f0 never replaces a key your tmux config already binds to something else: `f0 keys` and `f0 doctor` tell you to pick another one.
 
 ## Launcher
 
@@ -83,6 +85,7 @@ The agent pane runs whatever command you give it, so any AI coding CLI that work
 | In every project | `[defaults.agent] cmd = "codex"` in `config.toml` |
 | In one project | `[agent] cmd = "opencode"` in its file, or answer the question in `f0 init` and `f0 edit` |
 | In one task | `f0 new APP-123 --agent gemini` |
+| Several in one task | `f0 new APP-123 --agent claude --agent codex`, or [`f0 agent codex`](/reference/cli/#f0-agent) in a running session |
 
 Arguments are fine (`cmd = "codex --full-auto"`). `f0 new` and `f0 open` refuse to start when the agent's program is not installed, and `f0 doctor` checks every project's agent.
 
@@ -95,6 +98,8 @@ When `f0 open` rebuilds a closed session, for example after a restart, the agent
 cmd = "codex"
 resume = "codex resume --last"
 ```
+
+With several agents in a session, only the first one resumes: two agents resuming by folder would both pick up the same conversation. The others start fresh.
 
 If the resume command fails, as when there is no conversation yet, the agent starts fresh. `f0 new` always starts a new conversation.
 

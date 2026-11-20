@@ -7,6 +7,7 @@ mod view;
 
 use std::io::{self, BufRead, IsTerminal, Stdout, Write};
 use std::path::{Path, PathBuf};
+use std::thread::JoinHandle;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::bail;
@@ -44,6 +45,7 @@ pub fn run() -> anyhow::Result<()> {
         launch: config::load_launch(&config_dir)?,
         projects: config::load_projects(&config_dir, &defaults)?,
         config_dir,
+        refresh: None,
     };
     run_loop(State::new(Vec::new()), Some(app))
 }
@@ -71,7 +73,18 @@ struct App {
     home: PathBuf,
     launch: Launch,
     projects: Vec<Project>,
+    /// The lists being reloaded in the background, if any.
+    refresh: Option<Refresh>,
 }
+
+/// A background reload of the projects and the tasks of `project`, which `treehouse
+/// status` makes slow: about a second per project.
+struct Refresh {
+    project: String,
+    job: JoinHandle<Refreshed>,
+}
+
+type Refreshed = (anyhow::Result<Vec<TaskItem>>, Vec<ProjectItem>);
 
 impl App {
     fn reload_projects(&mut self) -> anyhow::Result<()> {
@@ -103,9 +116,17 @@ fn run_loop(mut state: State, mut app: Option<App>) -> anyhow::Result<()> {
         state.set_projects(items, None);
     }
     loop {
+        if let Some(app) = app.as_mut() {
+            apply_refresh(&mut state, app);
+        }
         let width = term.size()?.width;
         state.set_columns(view::columns_for(view::grid_width(width)));
         term.draw(|frame| view::draw(frame, &state, palette, now()))?;
+        // While a reload runs, wake up now and then to show it; keys work meanwhile.
+        let refreshing = app.as_ref().is_some_and(|app| app.refresh.is_some());
+        if refreshing && !event::poll(REFRESH_POLL)? {
+            continue;
+        }
         let Some(key) = next_key()? else {
             continue;
         };
@@ -144,9 +165,12 @@ fn perform(
 ) -> io::Result<()> {
     match action {
         Action::ShowTasks(name) => {
-            let app = &*app;
+            let Some(project) = app.project(&name) else {
+                state.error(format!("no project named `{name}`"));
+                return Ok(());
+            };
             match busy(term, state, palette, "Loading tasks…", || {
-                tasks_of(app, &name)
+                tasks_of(project)
             })? {
                 Ok(tasks) => state.show_tasks(name, tasks),
                 Err(e) => state.error(format!("{e:#}")),
@@ -155,15 +179,15 @@ fn perform(
         Action::Open(slot) => {
             let target = slot.to_string_lossy().into_owned();
             let result = suspended(term, || {
-                commands::open(Some(&target), &[], None, Attach::Wait)
+                commands::open(Some(&target), &[], &[], Attach::Wait)
             })?;
-            back_home(state, app, term, palette, result)?;
+            after_session(state, app, result);
         }
         Action::New { project, ticket } => {
             let result = suspended(term, || {
-                commands::new(&ticket, Some(&project), None, None, &[], None, Attach::Wait)
+                commands::new(&ticket, Some(&project), None, None, &[], &[], Attach::Wait)
             })?;
-            back_home(state, app, term, palette, result)?;
+            after_session(state, app, result);
         }
         Action::SearchRepos => {
             let folders: Vec<PathBuf> = app
@@ -224,13 +248,13 @@ fn perform(
         Action::Stop(slot) => {
             let target = slot.to_string_lossy().into_owned();
             let result = suspended(term, || commands::stop(Some(&target)))?;
-            after_session(state, app, term, palette, result)?;
+            after_session(state, app, result);
         }
         Action::Done(slot) => {
             let target = slot.to_string_lossy().into_owned();
             // treehouse asks here before discarding uncommitted changes.
             let result = suspended(term, || commands::done(Some(&target), false))?;
-            after_session(state, app, term, palette, result)?;
+            after_session(state, app, result);
         }
         Action::Edit(name) => {
             let result = suspended(term, || edit::run(Some(&name)))?;
@@ -306,52 +330,74 @@ fn wait_for_enter(prompt: &str) {
     let _ = io::stdin().lock().read_line(&mut String::new());
 }
 
-/// Back from a task's session: the list of projects, with that project selected. When
-/// the task could not be opened, the task list stays, with the error.
-fn back_home(
-    state: &mut State,
-    app: &App,
-    term: &mut Term,
-    palette: Palette,
-    result: anyhow::Result<()>,
-) -> io::Result<()> {
-    let state::Screen::Tasks { project } = &state.screen else {
-        return Ok(());
-    };
-    if result.is_err() {
-        return after_session(state, app, term, palette, result);
-    }
-    let project = project.clone();
-    let items = busy(term, state, palette, "Refreshing…", || {
-        project_items(&app.projects, &app.home)
-    })?;
-    state.set_projects(items, None);
-    state.show_projects(Some(&project));
-    Ok(())
-}
+/// How often the launcher checks on a background reload while no key is pressed.
+const REFRESH_POLL: Duration = Duration::from_millis(100);
 
-/// After closing or finishing a task from the list: the task list again, refreshed.
-fn after_session(
-    state: &mut State,
-    app: &App,
-    term: &mut Term,
-    palette: Palette,
-    result: anyhow::Result<()>,
-) -> io::Result<()> {
+/// Back from a task's session, or after closing or finishing one from the list: the
+/// task list of its project again. Which tasks run comes from tmux right away, so the
+/// next task opens without waiting; the slots, which only treehouse knows, and the
+/// projects that Esc goes back to reload in the background.
+fn after_session(state: &mut State, app: &mut App, result: anyhow::Result<()>) {
     let state::Screen::Tasks { project } = &state.screen else {
-        return Ok(());
+        return;
     };
     let project = project.clone();
-    match busy(term, state, palette, "Refreshing…", || {
-        tasks_of(app, &project)
-    })? {
-        Ok(tasks) => state.set_tasks(tasks),
-        Err(e) => state.error(format!("{e:#}")),
+    let sessions = tmux::sessions().unwrap_or_default();
+    state.set_tasks(with_sessions(&state.tasks, &sessions));
+    let running = state.tasks.iter().filter(|t| t.session.is_some()).count();
+    let stopped = state.tasks.len() - running;
+    if let Some(item) = state.projects.iter_mut().find(|p| p.name == project) {
+        item.counts = Some((running, stopped));
     }
     if let Err(e) = result {
         state.error(format!("{e:#}"));
     }
-    Ok(())
+    // A newer reload replaces an older one, whose thread finishes unheard.
+    app.refresh = app.project(&project).cloned().map(|current| {
+        let (projects, home) = (app.projects.clone(), app.home.clone());
+        let job = std::thread::spawn(move || (tasks_of(&current), project_items(&projects, &home)));
+        Refresh { project, job }
+    });
+}
+
+/// Shows the reload once it is done. The tasks only replace the list when it is still
+/// that project's.
+fn apply_refresh(state: &mut State, app: &mut App) {
+    if !app.refresh.as_ref().is_some_and(|r| r.job.is_finished()) {
+        return;
+    }
+    let Some(refresh) = app.refresh.take() else {
+        return;
+    };
+    let showing =
+        matches!(&state.screen, state::Screen::Tasks { project } if *project == refresh.project);
+    let (tasks, projects) = match refresh.job.join() {
+        Ok(refreshed) => refreshed,
+        Err(panic) => std::panic::resume_unwind(panic),
+    };
+    state.set_projects(projects, None);
+    match tasks {
+        Ok(tasks) if showing => state.set_tasks(tasks),
+        Err(e) if showing => state.error(format!("{e:#}")),
+        _ => {}
+    }
+}
+
+/// `tasks` with what `sessions` say about them: which run, and when each was last used.
+fn with_sessions(tasks: &[TaskItem], sessions: &[Session]) -> Vec<TaskItem> {
+    let mut tasks: Vec<TaskItem> = tasks
+        .iter()
+        .map(|task| {
+            let session = sessions.iter().find(|s| s.path == task.path);
+            TaskItem {
+                session: session.map(|s| s.name.clone()),
+                activity: session.and_then(|s| s.activity),
+                ..task.clone()
+            }
+        })
+        .collect();
+    state::sort_tasks(&mut tasks);
+    tasks
 }
 
 /// Runs `job` on another thread while the spinner turns with `label`. Keys pressed
@@ -381,10 +427,7 @@ fn busy<T: Send>(
     result
 }
 
-fn tasks_of(app: &App, name: &str) -> anyhow::Result<Vec<TaskItem>> {
-    let Some(project) = app.project(name) else {
-        bail!("no project named `{name}`");
-    };
+fn tasks_of(project: &Project) -> anyhow::Result<Vec<TaskItem>> {
     let listing = commands::slots(std::slice::from_ref(project), &tmux::sessions()?, false);
     if let Some((_, error)) = listing.errors.into_iter().next() {
         bail!(error);
@@ -519,6 +562,28 @@ fn install_panic_hook() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sessions_mark_the_running_tasks_and_sort_them_first() {
+        let task = |name: &str, session: Option<&str>| TaskItem {
+            task: name.to_owned(),
+            branch: String::new(),
+            path: PathBuf::from(format!("/pool/{name}")),
+            session: session.map(str::to_owned),
+            activity: None,
+        };
+        let sessions = [Session {
+            name: "web/B".to_owned(),
+            path: PathBuf::from("/pool/B"),
+            activity: Some(7),
+        }];
+        let tasks = with_sessions(&[task("A", Some("web/A")), task("B", None)], &sessions);
+        let summary: Vec<_> = tasks
+            .iter()
+            .map(|t| (t.task.as_str(), t.session.as_deref(), t.activity))
+            .collect();
+        assert_eq!(summary, [("B", Some("web/B"), Some(7)), ("A", None, None)]);
+    }
 
     #[test]
     fn typed_paths_expand_the_home_folder() {

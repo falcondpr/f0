@@ -35,6 +35,18 @@ f0 new APP-125 -t chore         # chore/APP-125
 
 The session is still `my-app/APP-124`. Projects created before `branch_prefixes` existed have only `feature/`; add the others with `f0 edit`.
 
+### More than one agent
+
+A task can run several agents, stacked in the agent column. Start them with the task, the first on top:
+
+```bash
+f0 new APP-126 --agent claude --agent codex
+```
+
+or add one to a running session with `Ctrl-a A`, or [`f0 agent codex`](/reference/cli/#f0-agent) in any of its panes. f0 remembers them for the slot, so they come back when you reopen the task; only the first one resumes its conversation.
+
+All of them edit the same files on the same branch. Add an agent to review what the first one writes, to run and fix the tests, or to answer questions about the code without interrupting it. For two changes in parallel, start two tasks: each gets its own slot and branch.
+
 ## 2. Environment files
 
 treehouse copies the files listed in `.worktreeinclude` from the main checkout into the slot when it is leased. See [Worktrees](/guides/worktrees/).

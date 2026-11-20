@@ -39,6 +39,7 @@ El prefijo es `Ctrl-a`.
 | `Ctrl-a s` | Elegir una sesión |
 | `Ctrl-a d` | Desconectarse; todo sigue corriendo |
 | `Ctrl-a X` | Cierra la tarea de f0 de esta sesión: un menú para conservar su slot para después (`f0 stop`) o devolverlo, después de preguntar (`f0 done`). La define el propio f0, ver [Teclas](/es/reference/configuration/#teclas) |
+| `Ctrl-a A` | Arranca otro agente debajo de los de esta sesión: pide el comando, Enter solo arranca el del proyecto (`f0 agent`). La define el propio f0 |
 | `Ctrl-a \|` / `Ctrl-a -` | Dividir a la derecha / abajo |
 | `Ctrl-a c` | Ventana nueva |
 | `Ctrl-a [` | Desplazarse hacia atrás (`v` selecciona, `y` copia al portapapeles) |
@@ -110,4 +111,4 @@ Valen en f0.app, desde su propia configuración, y en tu Ghostty cuando está en
 
 `Ctrl-h/j/k/l` entre paneles necesita las dos mitades de [vim-tmux-navigator](https://github.com/christoomey/vim-tmux-navigator): su fragmento en tu configuración de tmux y el plugin en Neovim. Sin ellas, muévete entre paneles con tu prefijo de tmux y las flechas. Los títulos de los paneles solo aparecen si tu configuración de tmux define `pane-border-status`.
 
-f0 define `X` después de tu propio prefijo cada vez que crea o abre una sesión, así que funciona con cualquier configuración de tmux y sin recargarla. La barra de estado de cada sesión de f0 la muestra, como `C-b X close task`. Elige otra tecla o desactívala con [`[keys] done`](/es/reference/configuration/#teclas).
+f0 define `X` y `A` después de tu propio prefijo cada vez que crea o abre una sesión, así que funcionan con cualquier configuración de tmux y sin recargarla. La barra de estado de cada sesión de f0 las muestra, como `C-b X close task  C-b A new agent`. Elige otras teclas o desactívalas con [`[keys]`](/es/reference/configuration/#teclas).

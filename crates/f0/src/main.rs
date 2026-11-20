@@ -1,3 +1,4 @@
+mod agents;
 mod appearance;
 mod commands;
 mod config;
@@ -60,9 +61,10 @@ enum Cmd {
         /// Servers to start right away, comma separated; the others wait for Enter.
         #[arg(long, value_delimiter = ',', value_name = "SERVERS")]
         start: Vec<String>,
-        /// AI agent for this task only, like `codex`, overriding the project's.
-        #[arg(long, value_name = "COMMAND")]
-        agent: Option<String>,
+        /// AI agent for this task only, like `codex`, overriding the project's. Repeat it
+        /// to stack several agents in the session, the first on top.
+        #[arg(long = "agent", value_name = "COMMAND")]
+        agents: Vec<String>,
         /// Create the session without attaching to it.
         #[arg(long)]
         no_attach: bool,
@@ -74,12 +76,25 @@ enum Cmd {
         /// Servers to start right away when the session is rebuilt, comma separated.
         #[arg(long, value_delimiter = ',', value_name = "SERVERS")]
         start: Vec<String>,
-        /// AI agent for the rebuilt session, overriding the project's.
-        #[arg(long, value_name = "COMMAND")]
-        agent: Option<String>,
+        /// AI agent for the rebuilt session, overriding the ones it had; repeatable, as in
+        /// `f0 new`.
+        #[arg(long = "agent", value_name = "COMMAND")]
+        agents: Vec<String>,
         /// Create the session without attaching to it.
         #[arg(long)]
         no_attach: bool,
+    },
+    /// Start another agent in the session of a task, under the ones it has. Run it in one
+    /// of the session's panes.
+    Agent {
+        /// The agent and its arguments, like `codex --full-auto`; defaults to the
+        /// project's.
+        #[arg(
+            trailing_var_arg = true,
+            allow_hyphen_values = true,
+            value_name = "COMMAND"
+        )]
+        cmd: Vec<String>,
     },
     /// List the slots in use, as `<project>/<slot>`, with their task and session.
     Ls {
@@ -91,7 +106,7 @@ enum Cmd {
         paths: bool,
     },
     /// The home screen of f0.app: pick a project, then a task to open or start. Leaving
-    /// the task's session comes back to the list.
+    /// the task's session comes back to the tasks of its project.
     Launch,
     /// Pick an f0 session and switch to it.
     Switch,
@@ -140,7 +155,7 @@ fn main() -> anyhow::Result<()> {
             base,
             kind,
             start,
-            agent,
+            agents,
             no_attach,
         } => commands::new(
             &ticket,
@@ -148,15 +163,16 @@ fn main() -> anyhow::Result<()> {
             base,
             kind.as_deref(),
             &start,
-            agent,
+            &agents,
             attach_mode(no_attach),
         ),
         Cmd::Open {
             slot,
             start,
-            agent,
+            agents,
             no_attach,
-        } => commands::open(slot.as_deref(), &start, agent, attach_mode(no_attach)),
+        } => commands::open(slot.as_deref(), &start, &agents, attach_mode(no_attach)),
+        Cmd::Agent { cmd } => commands::agent(&cmd.join(" ")),
         Cmd::Ls { all, paths } => commands::ls(all, paths),
         Cmd::Launch => launch::run(),
         Cmd::Switch => commands::switch(),

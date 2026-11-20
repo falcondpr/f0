@@ -21,7 +21,7 @@ f0 launch
 
 Los proyectos y las tareas se muestran como tarjetas, y la seleccionada lleva el borde del color de acento. La tarjeta de un proyecto cuenta sus tareas; la de una tarea muestra su rama y si está corriendo (`●`, con cuándo la usaste por última vez) o parada (`○`: el slot está alquilado, sin sesión). Mira [Atajos](/es/reference/keybindings/#launcher) para todas las teclas.
 
-- **Enter sobre una tarea** la abre como `f0 open` y se conecta a su sesión. Al salir de la sesión, desconectándote (`Ctrl-a d`), con `f0 stop` o con `f0 done`, vuelve la lista de proyectos, con ese proyecto seleccionado.
+- **Enter sobre una tarea** la abre como `f0 open` y se conecta a su sesión. Al salir de la sesión, desconectándote (`Ctrl-a d`), con `f0 stop` o con `f0 done`, vuelve la lista de tareas de ese proyecto, actualizada; Esc sube a los proyectos.
 - **`n`** pide un ticket y empieza la tarea como `f0 new`.
 - **`a`**, en los proyectos, busca repositorios de git que todavía no son proyectos, hasta tres carpetas de profundidad en las [carpetas de búsqueda](/es/reference/configuration/#launcher), salteando `node_modules`, `target`, las carpetas ocultas y los slots de treehouse. Enter sobre uno le hace las preguntas de `f0 init`, y `p` toma la carpeta de uno que la búsqueda no encontró.
 - **`q`** sale del launcher, y eso cierra la ventana de f0.app. El launcher no tiene forma de salir a una shell suelta.
@@ -99,7 +99,7 @@ Si nada cambió lo dice y no toca el archivo. Si no, muestra un `git diff` del a
 Reserva un slot de treehouse con una rama nueva y abre su espacio de trabajo.
 
 ```bash
-f0 new <ticket> [--project <nombre>] [--base <rama>] [--type <tipo>] [--start <servidores>] [--agent <comando>] [--no-attach]
+f0 new <ticket> [--project <nombre>] [--base <rama>] [--type <tipo>] [--start <servidores>] [--agent <comando>]... [--no-attach]
 ```
 
 | Argumento | Significado |
@@ -109,7 +109,7 @@ f0 new <ticket> [--project <nombre>] [--base <rama>] [--type <tipo>] [--start <s
 | `--base` | Rama de la que se corta, en lugar de la `base` del proyecto |
 | `-t`, `--type` | Tipo de rama: uno de los `branch_prefixes` del proyecto, con o sin la `/` (`--type fix` crea `fix/APP-123`). La sesión sigue siendo `my-app/APP-123` |
 | `--start` | Servidores que arrancan enseguida, separados por coma (`--start api,web`). Los demás esperan tu Enter, salvo que tengan `autostart = true` |
-| `--agent` | Agente de IA solo para esta tarea, como `codex` u `opencode`, en lugar del del proyecto |
+| `--agent` | Agente de IA solo para esta tarea, como `codex` u `opencode`, en lugar del del proyecto. Repítelo para apilar varios agentes en la columna del agente, el primero arriba: `--agent claude --agent codex` |
 | `--no-attach` | Crea la sesión sin conectarse e imprime su nombre |
 
 Necesita treehouse, un archivo de proyecto y su [archivo de includes](/es/guides/worktrees/#worktreeinclude). Si falta alguno falla antes de reservar el slot, y también si ya existe una sesión con el mismo nombre.
@@ -121,21 +121,39 @@ Si la rama ya existe, en local o en `origin`, como con una tarea devuelta antes 
 Vuelve a abrir el espacio de trabajo de un slot de treehouse, o se conecta a su sesión si sigue abierta.
 
 ```bash
-f0 open [slot] [--start <servidores>] [--agent <comando>] [--no-attach]
+f0 open [slot] [--start <servidores>] [--agent <comando>]... [--no-attach]
 ```
 
 | Argumento | Significado |
 |---|---|
 | `[slot]` | Slot a abrir: su id (`my-app/4`), su tarea (`APP-123`), el nombre de su sesión o su ruta (sirve cualquier carpeta dentro), como los muestra `f0 ls`. Por defecto, la carpeta actual |
 | `--start` | Servidores que arrancan al rearmar la sesión, como en `f0 new`. No hace nada si la sesión ya está abierta |
-| `--agent` | Agente de IA para la sesión rearmada, como en `f0 new` |
+| `--agent` | Agentes de IA para la sesión rearmada, como en `f0 new`, en lugar de los que tenía |
 | `--no-attach` | Crea la sesión sin conectarse |
 
-Una sesión rearmada retoma la última conversación del agente en la tarea. Mira [Retomar la conversación](/es/reference/configuration/#retomar-la-conversación).
+Una sesión rearmada vuelve con los agentes que tenía al cerrarse, incluidos los que se agregaron con [`f0 agent`](#f0-agent), y el primero retoma su última conversación en la tarea. Los demás arrancan de cero: retomar por carpeta, como `claude --continue`, no distingue sus conversaciones. Mira [Retomar la conversación](/es/reference/configuration/#retomar-la-conversación).
 
 Sirve para recuperar una tarea cuando su sesión se cerró, por ejemplo si se reinició tmux o la computadora. El slot tiene que pertenecer a un proyecto configurado; cualquier otra carpeta se rechaza.
 
 Una carpeta que existe siempre gana sobre un nombre. El número de slot solo (`4`) también sirve, pero se repite entre proyectos: en ese caso se usa el proyecto de la carpeta actual, y fuera de cualquier proyecto f0 lista los ids para elegir.
+
+## f0 agent
+
+Arranca otro agente en la sesión de una tarea, debajo de los que ya tiene.
+
+```bash
+f0 agent [comando]
+```
+
+| Argumento | Significado |
+|---|---|
+| `[comando]` | El agente y sus argumentos, como `codex` o `codex --full-auto`. Por defecto, el agente del proyecto |
+
+Ejecútalo en cualquier panel de la sesión de una tarea, o aprieta `Ctrl-a A`, que pide el comando en la barra de estado (Enter solo arranca el agente del proyecto). El panel nuevo va debajo del último agente, en la carpeta del slot, con el título `agent: codex`, o `agent: claude 2` para un segundo del mismo programa; la columna del agente mantiene su ancho y sus agentes se reparten la altura en partes iguales. Fuera de una sesión de f0 falla sin cambiar nada.
+
+f0 recuerda los agentes de cada slot, así que `f0 stop` y `f0 open`, o el launcher, los traen de vuelta. Un panel de agente cerrado con `Ctrl-a x` queda cerrado. Devolver el slot con `f0 done` los olvida, y la próxima tarea en ese slot arranca con el agente del proyecto.
+
+Todos los agentes de una sesión trabajan en la misma carpeta y en la misma rama. Un segundo agente sirve para revisar, probar o responder preguntas sobre el código mientras el primero trabaja; dos cambios en paralelo van en dos tareas.
 
 ## f0 ls
 
@@ -196,13 +214,13 @@ Dentro de la sesión que cerraría, cerrar la sesión detendría al propio `f0 d
 
 ## f0 keys
 
-Define la tecla que cierra una tarea en el servidor de tmux en ejecución y la muestra en la barra de estado de cada sesión de f0.
+Define las teclas de f0, la que cierra una tarea y la que arranca otro agente, en el servidor de tmux en ejecución y las muestra en la barra de estado de cada sesión de f0.
 
 ```bash
 f0 keys
 ```
 
-`f0 new` y `f0 open` lo hacen para sus sesiones, e `install.sh` lo ejecuta después de actualizar, así que las sesiones que ya estaban abiertas reciben la tecla nueva sin recargar tmux. La tecla sale de [`[keys] done`](/es/reference/configuration/#teclas); después de cambiarla, ejecuta `f0 keys` para quitar la anterior.
+`f0 new` y `f0 open` lo hacen para sus sesiones, e `install.sh` lo ejecuta después de actualizar, así que las sesiones que ya estaban abiertas reciben las teclas nuevas sin recargar tmux. Las teclas salen de [`[keys]`](/es/reference/configuration/#teclas); después de cambiar una, ejecuta `f0 keys` para quitar la anterior.
 
 ## f0 doctor
 
@@ -214,7 +232,7 @@ Revisa herramientas, valores globales, proyectos, las teclas de tmux y lo que im
 | Al menos un proyecto | Sí |
 | Comandos de editor y agente de los valores globales y de cada proyecto | Sí |
 | `repo` y archivo de includes de cada proyecto | Sí |
-| El servidor de tmux en ejecución define la tecla que cierra una tarea (se omite sin servidor o con `[keys] done = false`) | Sí |
+| El servidor de tmux en ejecución define las teclas que cierran una tarea y arrancan otro agente (se omite sin servidor, o para una tecla en `false`) | Sí |
 | `gh`, `rg`, Ghostty | No |
 | `/Applications/f0.app`, distinguiéndola de otra app con ese nombre, y su configuración `~/.config/f0/ghostty.conf` | No |
 | Con la config de tmux incluida enlazada: tmux 3.8 o posterior, que el tema necesita | Sí |

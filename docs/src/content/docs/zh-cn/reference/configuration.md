@@ -53,13 +53,15 @@ f0 会在你的 tmux 前缀键之后自己绑定它的 tmux 按键，所以它�
 ```toml
 [keys]
 done = "X"
+agent = "A"
 ```
 
 | 键 | 默认值 | 含义 |
 |---|---|---|
 | `keys.done` | `"X"` | 在按下它的会话中打开一个关闭任务的菜单：保留 slot（如 `f0 stop`），或归还它（如 `f0 done`）。可以是任何 tmux 按键名（`"Q"`、`"M-x"`）；`false` 表示关闭 |
+| `keys.agent` | `"A"` | 在状态栏中询问一个智能体，并在按下它的会话中把它启动在其他智能体下方，如 [`f0 agent`](/zh-cn/reference/cli/#f0-agent)。直接按 Enter 启动项目的智能体。取值与 `keys.done` 相同，且必须是不同的按键 |
 
-每个 f0 会话的状态栏都会显示这个按键，比如 `C-a X close task`。f0 从不替换你的 tmux 配置已经绑定到其他功能的按键：`f0 keys` 和 `f0 doctor` 会提示你换一个。
+每个 f0 会话的状态栏都会显示这些按键，比如 `C-a X close task  C-a A new agent`。f0 从不替换你的 tmux 配置已经绑定到其他功能的按键：`f0 keys` 和 `f0 doctor` 会提示你换一个。
 
 ## 启动器
 
@@ -83,6 +85,7 @@ folders = ["~/work", "/Volumes/Data/repos"]
 | 所有项目 | 在 `config.toml` 中设置 `[defaults.agent] cmd = "codex"` |
 | 单个项目 | 在项目文件中设置 `[agent] cmd = "opencode"`，或在 `f0 init` 和 `f0 edit` 中回答这个问题 |
 | 单个任务 | `f0 new APP-123 --agent gemini` |
+| 一个任务中的多个智能体 | `f0 new APP-123 --agent claude --agent codex`，或在运行中的会话里执行 [`f0 agent codex`](/zh-cn/reference/cli/#f0-agent) |
 
 可以带参数（`cmd = "codex --full-auto"`）。当智能体的程序没有安装时，`f0 new` 和 `f0 open` 会拒绝启动，`f0 doctor` 会检查每个项目的智能体。
 
@@ -95,6 +98,8 @@ folders = ["~/work", "/Volumes/Data/repos"]
 cmd = "codex"
 resume = "codex resume --last"
 ```
+
+一个会话中有多个智能体时，只有第一个会恢复：两个按目录恢复的智能体会接上同一个对话。其他智能体重新开始。
 
 如果恢复命令失败（例如还没有任何对话），智能体会重新开始。`f0 new` 总是开始新的对话。
 

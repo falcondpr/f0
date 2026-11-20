@@ -78,7 +78,7 @@ import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components';
 
 ## f0.app
 
-f0.app 是 f0 自己的终端，所以无论你平时用什么终端，它的快捷键都一样。它是一份名为 f0 的 Ghostty 副本，有自己的图标和自己的配置 `~/.config/f0/ghostty.conf`。每个窗口都会打开[启动器](/zh-cn/reference/cli/#f0-launch)：先选项目，再选任务，离开任务的会话后会回到项目列表。f0.app 不提供独立的 shell：按 `q` 关闭窗口。
+f0.app 是 f0 自己的终端，所以无论你平时用什么终端，它的快捷键都一样。它是一份名为 f0 的 Ghostty 副本，有自己的图标和自己的配置 `~/.config/f0/ghostty.conf`。每个窗口都会打开[启动器](/zh-cn/reference/cli/#f0-launch)：先选项目，再选任务，离开任务的会话后会回到该项目的任务列表。f0.app 不提供独立的 shell：按 `q` 关闭窗口。
 
 - 它独立于 Ghostty：无论你的 Ghostty 是否打开，它和它的配置都不会影响 f0.app，f0.app 也不会修改它们。
 - 安装脚本复制 `/Applications/Ghostty.app`（缺少时用 Homebrew 安装），重命名副本，设置 bundle id 为 `com.falcondpr.f0`，并进行 ad hoc 签名。

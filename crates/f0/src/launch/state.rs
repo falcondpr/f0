@@ -182,10 +182,23 @@ impl State {
         self.reset_list();
     }
 
-    /// New tasks of the open project, keeping the selection where it was.
+    /// New tasks of the open project, keeping the selected task selected even when the
+    /// new list moves it, so Enter never opens another one.
     pub fn set_tasks(&mut self, tasks: Vec<TaskItem>) {
+        let selected = self
+            .selected_index()
+            .and_then(|index| self.tasks.get(index))
+            .map(|task| task.path.clone());
         self.tasks = tasks;
-        self.clamp();
+        let kept = selected.and_then(|path| {
+            self.visible()
+                .iter()
+                .position(|&index| self.tasks[index].path == path)
+        });
+        match kept {
+            Some(position) => self.selected = position,
+            None => self.clamp(),
+        }
     }
 
     /// New projects, selecting `select` when given.
@@ -594,6 +607,39 @@ mod tests {
         assert_eq!(state.selected, 1);
         assert_eq!(state.handle(Key::Esc), Action::None);
         assert_eq!(state.screen, Screen::Projects);
+    }
+
+    #[test]
+    fn projects_refreshed_from_the_task_list_keep_it_and_esc_selects_the_project() {
+        let mut state = tasks_screen();
+        state.handle(Key::Down);
+        state.set_projects(vec![project("api"), project("new"), project("web")], None);
+        assert_eq!(
+            state.screen,
+            Screen::Tasks {
+                project: "web".to_owned()
+            }
+        );
+        assert_eq!(state.selected, 1, "the selected task stays");
+        state.handle(Key::Esc);
+        assert_eq!(state.screen, Screen::Projects);
+        assert_eq!(state.selected, 2);
+    }
+
+    #[test]
+    fn new_tasks_keep_the_selected_task_where_it_moved() {
+        let mut state = tasks_screen();
+        state.handle(Key::Down);
+        state.set_tasks(vec![
+            task("WEB-2", Some("web/WEB-2"), Some(9)),
+            task("WEB-1", Some("web/WEB-1"), Some(5)),
+        ]);
+        assert_eq!(state.selected, 0, "WEB-2 moved to the top");
+        state.set_tasks(vec![task("WEB-1", None, None)]);
+        assert_eq!(
+            state.selected, 0,
+            "a returned slot falls back to a valid card"
+        );
     }
 
     #[test]

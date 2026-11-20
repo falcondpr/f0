@@ -35,6 +35,18 @@ f0 new APP-125 -t chore         # chore/APP-125
 
 会话名仍然是 `my-app/APP-124`。在 `branch_prefixes` 出现之前创建的项目只有 `feature/`，可以用 `f0 edit` 添加其他前缀。
 
+### 多个智能体
+
+一个任务可以运行多个智能体，堆叠在智能体列中。随任务一起启动它们，第一个在最上面：
+
+```bash
+f0 new APP-126 --agent claude --agent codex
+```
+
+或者在运行中的会话里用 `Ctrl-a A` 添加一个，也可以在任意窗格中执行 [`f0 agent codex`](/zh-cn/reference/cli/#f0-agent)。f0 会为该 slot 记住它们，所以重新打开任务时它们会回来；只有第一个会恢复对话。
+
+它们都在同一个分支上编辑同样的文件。添加智能体可以用来审查第一个写的代码、运行并修复测试，或者在不打断它的情况下回答关于代码的问题。两个并行的修改请开两个任务：每个任务都有自己的 slot 和分支。
+
 ## 2. 环境文件
 
 租用 slot 时，treehouse 会把 `.worktreeinclude` 中列出的文件从主检出复制到 slot 中。参见 [Worktree](/zh-cn/guides/worktrees/)。
