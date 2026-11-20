@@ -74,11 +74,6 @@ const terminals = ['t1', 't2', 't3', 't4'];
 				</div>
 			</div>
 			<div class="cap hide"></div>
-			<div class="outro">
-				<div class="ovw">
-					<div class="end"><span class="a">f0</span><span class="b">.falcondpr.com</span></div>
-				</div>
-			</div>
 		</div>
 	</div>
 </f0-showcase>
@@ -235,15 +230,13 @@ const terminals = ['t1', 't2', 't3', 't4'];
 		const stage = $('.stage');
 		const world = $('.world');
 		const cap = $('.cap');
-		const outroEl = $('.outro');
 
 		// The scene only advances while it is on screen: every pause waits for visibility before resolving.
 		let visible = false;
 		let started = false;
 		const waiting: (() => void)[] = [];
 		const awake = () => (visible ? Promise.resolve() : new Promise<void>((resolve) => waiting.push(resolve)));
-		const hold = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)).then(awake);
-		const sleep = (ms: number) => hold(ms / SPEED);
+		const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms / SPEED)).then(awake);
 
 		// CSS animations and transitions are authored at 1x too; infinite ones (cursor blink, pulse) keep their pace.
 		const speedUp = () => {
@@ -260,13 +253,7 @@ const terminals = ['t1', 't2', 't3', 't4'];
 			const f = stage.clientWidth / W;
 			world.style.transform = `translate(${cam.x * f}px,${cam.y * f}px) scale(${cam.z * f})`;
 		};
-		const fitOutro = () => {
-			$('.ovw').style.transform = `scale(${stage.clientWidth / W})`;
-		};
-		new ResizeObserver(() => {
-			applyCam();
-			fitOutro();
-		}).observe(stage);
+		new ResizeObserver(applyCam).observe(stage);
 
 		function tweenCam(to: typeof cam, duration: number) {
 			return new Promise<void>((resolve) => {
@@ -639,7 +626,6 @@ const terminals = ['t1', 't2', 't3', 't4'];
 		/* scenario */
 		function reset() {
 			stage.classList.remove('dark');
-			outroEl.classList.remove('on', 'dom');
 			buildChanges();
 			buildExplorer();
 			buildEditor();
@@ -647,17 +633,9 @@ const terminals = ['t1', 't2', 't3', 't4'];
 			buildTerminals();
 		}
 
-		async function outro() {
-			cap.classList.add('hide');
-			outroEl.classList.add('on');
-			await hold(1200);
-			outroEl.classList.add('dom');
-			await hold(2200);
-		}
-
 		async function scene() {
+			cap.classList.add('hide');
 			world.style.opacity = '0';
-			outroEl.classList.remove('on');
 			await sleep(550);
 			reset();
 			world.style.opacity = '1';
@@ -784,7 +762,6 @@ const terminals = ['t1', 't2', 't3', 't4'];
 			caption('done');
 			await overview();
 			await sleep(2600);
-			await outro();
 		}
 
 		function start() {
@@ -814,7 +791,6 @@ const terminals = ['t1', 't2', 't3', 't4'];
 		}
 
 		reset();
-		fitOutro();
 		applyCam();
 
 		return {
@@ -861,17 +837,18 @@ const terminals = ['t1', 't2', 't3', 't4'];
 			box-shadow: 0 24px 60px rgb(0 0 0 / 0.16);
 		}
 
+		/* Surfaces use the same neutral grays as custom.css, so the window blends with the page in each theme. */
 		.stage {
-			--bg: #eceef2;
-			--panel: #eef0f4;
-			--ed: #f4f5f8;
-			--term: #f1f2f5;
-			--tbar: #e4e6eb;
-			--line: #dcdfe6;
-			--line2: #cfd3db;
-			--txt: #3b4050;
-			--dim: #9aa0ab;
-			--ttl: #555b68;
+			--bg: #f5f5f5;
+			--panel: #f1f1f1;
+			--ed: #fafafa;
+			--term: #f3f3f3;
+			--tbar: #e9e9e9;
+			--line: #d9d9d9;
+			--line2: #cccccc;
+			--txt: #262626;
+			--dim: #8f8f8f;
+			--ttl: #525252;
 			--o: #e07b39;
 			--m: #e07b39;
 			--dn: #3f6fdc;
@@ -885,14 +862,14 @@ const terminals = ['t1', 't2', 't3', 't4'];
 			--addt: #25632a;
 			--delt: #9b2335;
 			--flash: #cdeec4;
-			--sel: #dde3f3;
-			--cl: #e8ebf2;
+			--sel: #e4e4e4;
+			--cl: #ededed;
 			--tab: #fff;
-			--ubg: #e3e6ed;
-			--num: #b4b9c4;
-			--tilde: #c3c8d3;
+			--ubg: #e9e9e9;
+			--num: #b3b3b3;
+			--tilde: #c7c7c7;
 			--blkt: #fff;
-			--lgbg: #6b7385;
+			--lgbg: #737373;
 			--foot: #e07b39;
 			--kw: #a04fd1;
 			--str: #3d8b40;
@@ -909,12 +886,12 @@ const terminals = ['t1', 't2', 't3', 't4'];
 		}
 
 		.stage.dark {
-			--bg: #191919;
-			--panel: #1e1e1e;
-			--ed: #232323;
-			--term: #1c1c1c;
-			--tbar: #262626;
-			--line: #2c2c2c;
+			--bg: #121212;
+			--panel: #191919;
+			--ed: #1e1e1e;
+			--term: #161616;
+			--tbar: #212121;
+			--line: #2b2b2b;
 			--line2: #3a3a3a;
 			--txt: #e4e4e4;
 			--dim: #707070;
@@ -932,7 +909,7 @@ const terminals = ['t1', 't2', 't3', 't4'];
 			--addt: #b5e3a8;
 			--delt: #f4a7b0;
 			--flash: #28432a;
-			--sel: #2c2e35;
+			--sel: #2a2a2a;
 			--cl: #2b2b2b;
 			--tab: #2c2c2c;
 			--ubg: #2a2a2a;
@@ -976,7 +953,7 @@ const terminals = ['t1', 't2', 't3', 't4'];
 			flex-direction: column;
 			background: var(--bg);
 			color: var(--txt);
-			font-family: var(--sl-font-mono);
+			font-family: var(--__sl-font-mono);
 			font-size: 12px;
 			line-height: normal;
 		}
@@ -1414,7 +1391,7 @@ const terminals = ['t1', 't2', 't3', 't4'];
 		}
 
 		.splash .hint {
-			color: #b4b9c4;
+			color: var(--num);
 		}
 
 		.ln {
@@ -1743,79 +1720,6 @@ const terminals = ['t1', 't2', 't3', 't4'];
 				padding: 7px 12px;
 				font-size: 11px;
 			}
-		}
-
-		.outro {
-			position: absolute;
-			inset: 0;
-			opacity: 0;
-			pointer-events: none;
-			transition: opacity 0.5s;
-		}
-
-		.outro.on {
-			opacity: 1;
-		}
-
-		.ovw {
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 1600px;
-			height: 1000px;
-			overflow: hidden;
-			transform-origin: 0 0;
-			background: #1e1e1e;
-			font-family: var(--__sl-font);
-		}
-
-		.end {
-			position: absolute;
-			inset: 0;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-weight: 700;
-			letter-spacing: -0.03em;
-			line-height: 1;
-			white-space: nowrap;
-		}
-
-		.end .a {
-			color: #ebebeb;
-			font-size: 220px;
-			opacity: 0;
-			transform: scale(0.85);
-			transition:
-				font-size 1s cubic-bezier(0.65, 0, 0.35, 1),
-				opacity 0.6s,
-				transform 0.8s cubic-bezier(0.2, 1.3, 0.4, 1);
-		}
-
-		.end .b {
-			display: inline-block;
-			max-width: 0;
-			overflow: hidden;
-			color: #8f8f8f;
-			font-size: 84px;
-			opacity: 0;
-			transition:
-				max-width 1s 0.25s cubic-bezier(0.65, 0, 0.35, 1),
-				opacity 0.6s 0.55s;
-		}
-
-		.outro.on .a {
-			opacity: 1;
-			transform: none;
-		}
-
-		.outro.dom .a {
-			font-size: 84px;
-		}
-
-		.outro.dom .b {
-			max-width: 900px;
-			opacity: 1;
 		}
 
 		@media (prefers-reduced-motion: reduce) {
