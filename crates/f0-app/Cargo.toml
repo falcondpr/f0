@@ -1,6 +1,6 @@
 [package]
 name = "f0-app"
-version = "0.0.6"
+version = "0.0.7"
 edition = "2024"
 description = "The executable of f0.app: starts the bundled Ghostty with f0's own config"
 publish = false
