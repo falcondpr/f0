@@ -106,7 +106,7 @@ enum Cmd {
         paths: bool,
     },
     /// The home screen of f0.app: pick a project, then a task to open or start. Leaving
-    /// the task's session comes back to the list.
+    /// the task's session comes back to the tasks of its project.
     Launch,
     /// Pick an f0 session and switch to it.
     Switch,
