@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Installs f0: tmux, treehouse, Rust when cargo is missing, the CLI and f0.app, plus,
-# optionally, the bundled Neovim, tmux and Ghostty configs.
+# Installs f0: tmux, treehouse, Rust when cargo is missing, the CLI and f0.app with its
+# font, plus, optionally, the bundled Neovim, tmux and Ghostty configs.
 # Safe to run again: existing f0 links are kept, any other config is only replaced
 # after asking (or with --yes), with a backup first, and f0.app is rebuilt from the
 # installed Ghostty.
@@ -12,8 +12,9 @@ Usage: install.sh [options]
 
   --no-nvim          keep your own Neovim config
   --no-tmux-config   keep your own tmux config
-  --no-ghostty       keep your own Ghostty config (f0.app still installs Ghostty)
-  --no-app           skip /Applications/f0.app and its Ghostty
+  --no-ghostty       keep your own Ghostty config (f0.app still installs Ghostty
+                     and JetBrainsMono Nerd Font)
+  --no-app           skip /Applications/f0.app, its Ghostty and its font
   --cli-only         same as the four above: only tmux, treehouse, Rust and the f0 CLI
   --yes              replace existing configs without asking (they are backed up)
   -h, --help         show this help
@@ -29,6 +30,7 @@ STAMP="$(date +%Y%m%d%H%M%S)"
 GHOSTTY_APP=/Applications/Ghostty.app
 APP=/Applications/f0.app
 APP_ID=com.falcondpr.f0
+FONT_CASK=font-jetbrains-mono-nerd-font
 
 with_nvim=1
 with_tmux=1
@@ -94,6 +96,17 @@ ensure_cargo() {
     echo "cargo is still not in PATH after installing Rust; open a new shell and run install.sh again" >&2
     exit 1
   fi
+}
+
+# Both Ghostty configs set this font, and the launcher and Neovim draw its Nerd Font
+# glyphs. A copy installed by hand, without Homebrew, counts too.
+ensure_font() {
+  if compgen -G "$HOME/Library/Fonts/JetBrainsMonoNerdFont-*" >/dev/null ||
+    compgen -G "/Library/Fonts/JetBrainsMonoNerdFont-*" >/dev/null; then
+    info "ok      JetBrainsMono Nerd Font"
+    return
+  fi
+  brew install --cask "$FONT_CASK"
 }
 
 # f0.app is a copy of Ghostty.app renamed to f0, with its own bundle id, icon and
@@ -190,6 +203,7 @@ fi
 if { [ "$with_ghostty" = 1 ] || [ "$with_app" = 1 ]; } && [ ! -d "$GHOSTTY_APP" ]; then
   brew install --cask ghostty
 fi
+if [ "$with_ghostty" = 1 ] || [ "$with_app" = 1 ]; then ensure_font; fi
 
 if [ "$with_nvim" = 1 ]; then link "$ROOT/config/nvim" "$CONFIG/nvim"; fi
 if [ "$with_tmux" = 1 ]; then link "$ROOT/config/tmux" "$CONFIG/tmux"; fi
